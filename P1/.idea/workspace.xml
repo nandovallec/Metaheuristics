@@ -1,7 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="6308aea9-d7d3-4d8f-9897-f128b960779b" name="Default Changelist" comment="" />
+    <list default="true" id="6308aea9-d7d3-4d8f-9897-f128b960779b" name="Default Changelist" comment="">
+      <change beforePath="$PROJECT_DIR$/../Guion P1b BL PAR MHs 2019-20.pdf" beforeDir="false" afterPath="$PROJECT_DIR$/../Guion P1b BL PAR MHs 2019-20.pdf" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/main.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../Sem02-Problemas-BusquedaLocal-MHs-19-20.pdf" beforeDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -14,7 +19,11 @@
       </list>
     </option>
   </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$/.." />
+  </component>
   <component name="ProjectId" id="1YOy7QTulB8JSWSLDRVMYasxkkX" />
+  <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
   <component name="ProjectViewState">
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showExcludedFiles" value="true" />
@@ -23,6 +32,7 @@
   <component name="PropertiesComponent">
     <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
     <property name="WebServerToolWindowFactoryState" value="false" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$" />
   </component>
   <component name="RunManager">
     <configuration name="main" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
@@ -64,6 +74,9 @@
       <option name="presentableId" value="Default" />
       <updated>1582827767994</updated>
       <workItem from="1582827769408" duration="3131000" />
+      <workItem from="1583224636003" duration="10000" />
+      <workItem from="1583340434293" duration="3688000" />
+      <workItem from="1583396498385" duration="35000" />
     </task>
     <servers />
   </component>
@@ -75,28 +88,32 @@
       <screen x="0" y="0" width="1920" height="1048" />
     </state>
     <state x="370" y="185" key="#com.intellij.execution.impl.EditConfigurationsDialog/0.0.1920.1048@0.0.1920.1048" timestamp="1582831366531" />
-    <state width="1352" height="262" key="GridCell.Tab.0.bottom" timestamp="1582831849835">
+    <state width="1874" height="277" key="GridCell.Tab.0.bottom" timestamp="1583344253326">
       <screen x="0" y="0" width="1920" height="1048" />
     </state>
-    <state width="1352" height="262" key="GridCell.Tab.0.bottom/0.0.1920.1048@0.0.1920.1048" timestamp="1582831849835" />
-    <state width="1352" height="262" key="GridCell.Tab.0.center" timestamp="1582831849833">
+    <state width="1874" height="277" key="GridCell.Tab.0.bottom/0.0.1920.1048@0.0.1920.1048" timestamp="1583344253326" />
+    <state width="1874" height="277" key="GridCell.Tab.0.center" timestamp="1583344253326">
       <screen x="0" y="0" width="1920" height="1048" />
     </state>
-    <state width="1352" height="262" key="GridCell.Tab.0.center/0.0.1920.1048@0.0.1920.1048" timestamp="1582831849833" />
-    <state width="1352" height="262" key="GridCell.Tab.0.left" timestamp="1582831849832">
+    <state width="1874" height="277" key="GridCell.Tab.0.center/0.0.1920.1048@0.0.1920.1048" timestamp="1583344253326" />
+    <state width="1874" height="277" key="GridCell.Tab.0.left" timestamp="1583344253325">
       <screen x="0" y="0" width="1920" height="1048" />
     </state>
-    <state width="1352" height="262" key="GridCell.Tab.0.left/0.0.1920.1048@0.0.1920.1048" timestamp="1582831849832" />
-    <state width="1352" height="262" key="GridCell.Tab.0.right" timestamp="1582831849834">
+    <state width="1874" height="277" key="GridCell.Tab.0.left/0.0.1920.1048@0.0.1920.1048" timestamp="1583344253325" />
+    <state width="1874" height="277" key="GridCell.Tab.0.right" timestamp="1583344253326">
       <screen x="0" y="0" width="1920" height="1048" />
     </state>
-    <state width="1352" height="262" key="GridCell.Tab.0.right/0.0.1920.1048@0.0.1920.1048" timestamp="1582831849834" />
+    <state width="1874" height="277" key="GridCell.Tab.0.right/0.0.1920.1048@0.0.1920.1048" timestamp="1583344253326" />
+    <state x="814" y="337" key="com.intellij.ide.util.TipDialog" timestamp="1583396500638">
+      <screen x="0" y="0" width="1920" height="1048" />
+    </state>
+    <state x="814" y="337" key="com.intellij.ide.util.TipDialog/0.0.1920.1048@0.0.1920.1048" timestamp="1583396500638" />
     <state x="758" y="216" width="395" height="612" key="com.intellij.openapi.editor.actions.MultiplePasteAction$ClipboardContentChooser" timestamp="1582828165426">
       <screen x="0" y="0" width="1920" height="1048" />
     </state>
     <state x="758" y="216" width="395" height="612" key="com.intellij.openapi.editor.actions.MultiplePasteAction$ClipboardContentChooser/0.0.1920.1048@0.0.1920.1048" timestamp="1582828165426" />
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
-    <SUITE FILE_PATH="coverage/P1$main.coverage" NAME="main Coverage Results" MODIFIED="1582831849807" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/P1$main.coverage" NAME="main Coverage Results" MODIFIED="1583344253318" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
   </component>
 </project>
