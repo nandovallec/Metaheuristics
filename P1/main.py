@@ -5,7 +5,7 @@ import random
 import time
 from sklearn.utils import shuffle
 
-dataset_name = "rand"
+dataset_name = "ecoli"
 
 def same_cluster(df, p1, p2):
     return get_own_cluster(df, p1) == get_own_cluster(df, p2)
@@ -84,6 +84,8 @@ def is_infeasible(pair):
 # Then, it selects the closest one.
 def assignation(df, centr):
     global k
+    #data[['closest'] + ['c0']].groupby('closest').count()
+
     for i in range(len(centr)):
         df['distance_from_{}'.format(i)] = df[col_names].apply(lambda row : np.linalg.norm(row-centr[i]), axis=1)
 
@@ -109,7 +111,6 @@ def first_assignation(df, centr):
         feas_points = ['infeasility_cluster_{}'.format(i) for i in range(len(centr))]
         df.at[i, 'closest'] = df.loc[i, feas_points].idxmin().lstrip('infeasility_cluster_')
         own = int(df.at[i, 'closest'])
-
         for cluster_id in range(len(centr)):
             if cluster_id != own and df.at[i,'infeasility_cluster_{}'.format(own)] == df.at[i, 'infeasility_cluster_{}'.format(cluster_id)]:
                 d1 = np.linalg.norm(df.loc[i, col_names]-centr[own])
@@ -120,13 +121,24 @@ def first_assignation(df, centr):
 
         # df['closest'] = df['closest'].map(lambda x: int(x.lstrip('infeasility_cluster_')))
         # print(df.loc[i, feas_points].min())
-
+    clusters_assigned = (data[['closest']+['c0']].groupby('closest').count().index)
+    print(clusters_assigned)
+    for i in range(k):
+        if not(clusters_assigned.any == i):
+            df.at[i, 'closest'] = i
 
     return df
 
 def regular_assignation(df, centr):
     global k
+
+    count_clusters = (np.asarray(data[['closest'] + ['c0']].groupby('closest').count()))
     for i in range(len(df.index)):
+        own = int(df.at[i,'closest'])
+        if(count_clusters[own] == 1):
+            continue
+        count_clusters[own]-=1
+
         for cluster_id in range(len(centr)):
             df.at[i,'closest'] = cluster_id
             df.at[i,'infeasility_cluster_{}'.format(cluster_id)] = row_infeasibility(df, i)
@@ -134,19 +146,22 @@ def regular_assignation(df, centr):
         feas_points = ['infeasility_cluster_{}'.format(i) for i in range(len(centr))]
         df.at[i, 'closest'] = df.loc[i, feas_points].idxmin().lstrip('infeasility_cluster_')
         own = int(df.at[i, 'closest'])
-
+        count_clusters[own] += 1
         for cluster_id in range(len(centr)):
             if cluster_id != own and df.at[i,'infeasility_cluster_{}'.format(own)] == df.at[i, 'infeasility_cluster_{}'.format(cluster_id)]:
                 d1 = np.linalg.norm(df.loc[i, col_names]-centr[own])
                 d2 = np.linalg.norm(df.loc[i, col_names]-centr[cluster_id])
                 if(d1 > d2):
+                    count_clusters[int(df.at[i, 'closest'])]-=1
                     df.at[i, 'closest'] = cluster_id
                     own = int(cluster_id)
+                    count_clusters[own]+=1
 
         # df['closest'] = df['closest'].map(lambda x: int(x.lstrip('infeasility_cluster_')))
         # print(df.loc[i, feas_points].min())
 
-
+    print(count_clusters)
+    # print(count_clusters)
     return df
 
 
@@ -159,7 +174,7 @@ if dataset_name == "iris":
 elif dataset_name == "ecoli":
     k = 8
     data_path = "./ecoli_set.dat"
-    restrictions_path = "./ecoli_set_const_10.const"
+    restrictions_path = "./ecoli_set_const_20.const"
 else:
     k = 3
     data_path = "./rand_set.dat"
@@ -184,7 +199,7 @@ maxim = data.max()
 
 # Start random generator
 seed = int(round(time.time()))
-random.seed(seed)
+random.seed(200)
 idx = np.random.permutation(data.index)
 data = data.reindex(idx)
 restrictions = restrictions.reindex(idx)
@@ -198,17 +213,20 @@ plt.gca().set_aspect('equal')
 # Generate random centroids
 centroids = []
 for i in range(k):
-    centroids.append(random.uniform(minim, maxim))
+    centroids.append(random.uniform(minim, maxim)/1.5)
 
 centroids = np.array(centroids)
 
 data['closest']=np.nan
 data['distance_closest']=np.nan
-
+print(data.head(5))
 data = first_assignation(data, centroids)
+print((data[['closest']+['c0']].groupby('closest').count()))
+
 data = calculate_distance_closest(data, centroids)
 # data2 = data
 
+print((data[['closest']+['c0']].groupby('closest').count()))
 
 # print(data[['closest']+['distance_closest']].groupby('closest').mean().mean())
 # print(infeasibility(data))
@@ -220,7 +238,7 @@ data = calculate_distance_closest(data, centroids)
 # print(restrictions.iloc[6].shape)
 
 x = 0
-old_inf = 0
+old_inf = -1
 new_inf = infeasibility(data)
 data_old = data
 
@@ -242,6 +260,8 @@ if(data_old.equals(data)):
     print("They are equal")
 else:
     print("They are not equal")
+
+print((data[['closest']+['c0']].groupby('closest').count()))
 #
 # plt.figure(1)
 # plt.xlim(0, 10)
