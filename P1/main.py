@@ -5,7 +5,13 @@ import random
 import time
 from sklearn.utils import shuffle
 
-dataset_name = "ecoli"
+dataset_name = "rand"
+
+
+def get_neightbour(neightbour_list):
+    neighbour = neightbour_list[0]
+    neightbour_list = neightbour_list[1:] + [neighbour]
+    return neightbour_list, neighbour
 
 def same_cluster(df, p1, p2):
     return get_own_cluster(df, p1) == get_own_cluster(df, p2)
@@ -199,122 +205,93 @@ maxim = data.max()
 
 # Start random generator
 seed = int(round(time.time()))
-random.seed(200)
+seed = 200
+random.seed(seed)
+np.random.seed(seed)
 idx = np.random.permutation(data.index)
 data = data.reindex(idx)
 restrictions = restrictions.reindex(idx)
 # data = shuffle(data)
 
 
-f1 = plt.figure(1)
-plt.xlim(0, 10)
-plt.ylim(0, 10)
-plt.gca().set_aspect('equal')
-# Generate random centroids
-centroids = []
-for i in range(k):
-    centroids.append(random.uniform(minim, maxim)/1.5)
+# Local
+####################################################################
+possible_changes = []
+for i in range(len(data.index)):
+    for w in range(k):
+        possible_changes.append((i, w))
 
-centroids = np.array(centroids)
 
-data['closest']=np.nan
-data['distance_closest']=np.nan
-print(data.head(5))
-data = first_assignation(data, centroids)
-print((data[['closest']+['c0']].groupby('closest').count()))
+np.random.shuffle(possible_changes)
+# print(possible_changes)
+possible_changes, neigh = get_neightbour(possible_changes)
+# print(possible_changes)
 
-data = calculate_distance_closest(data, centroids)
-# data2 = data
+data['closest'] = np.random.randint(0,k, data.shape[0])
+print(np.asarray(data.groupby('closest').count()))
 
-print((data[['closest']+['c0']].groupby('closest').count()))
 
-# print(data[['closest']+['distance_closest']].groupby('closest').mean().mean())
-# print(infeasibility(data))
+###################################################################
+# GREEDY
+###############################################################3
+# f1 = plt.figure(1)
+# plt.xlim(0, 10)
+# plt.ylim(0, 10)
+# plt.gca().set_aspect('equal')
+# # Generate random centroids
+# centroids = []
+# for i in range(k):
+#     centroids.append(random.uniform(minim, maxim)/1.5)
 #
-
+# centroids = np.array(centroids)
+#
+# data['closest']=np.nan
+# data['distance_closest']=np.nan
 # print(data.head(5))
-# print(data.dtypes)
-
-# print(restrictions.iloc[6].shape)
-
-x = 0
-old_inf = -1
-new_inf = infeasibility(data)
-data_old = data
-
-while (old_inf != new_inf):
-    print(data[['closest']+['distance_closest']].groupby('closest').mean().mean())
-    print("Inf:  ", new_inf, "           It: ", x)
-    data_old = data
-    centroids = update_centroids(data)
-    data = regular_assignation(data, centroids)
-    data = calculate_distance_closest(data, centroids)
-    x = x+1
-    old_inf = new_inf
-    new_inf = infeasibility(data)
-
-# print(data[['closest']+['distance_closest']].groupby('closest').mean().mean())
-# print(infeasibility(data))
-
-if(data_old.equals(data)):
-    print("They are equal")
-else:
-    print("They are not equal")
-
-print((data[['closest']+['c0']].groupby('closest').count()))
+# data = first_assignation(data, centroids)
+# print((data[['closest']+['c0']].groupby('closest').count()))
 #
-# plt.figure(1)
-# plt.xlim(0, 10)
-# plt.ylim(0, 10)
-# plt.gca().set_aspect('equal')
-# data2['color'] = data2['closest'].apply(lambda x: colmap[int(x)])
+# data = calculate_distance_closest(data, centroids)
+# # data2 = data
 #
-# plt.scatter(data2['c0'], data2['c1'], color=data2["color"])
-# for i in range(k):
-#     plt.scatter(*centroids[i], color=colmap[i],marker=(5, 1),edgecolors='k')
+# print((data[['closest']+['c0']].groupby('closest').count()))
 #
-#
-#
-# plt.figure(2)
-# data['color'] = data['closest'].apply(lambda x: colmap[int(x)])
-#
-# plt.xlim(0, 10)
-# plt.ylim(0, 10)
-# plt.gca().set_aspect('equal')
-# plt.scatter(data['c0'], data['c1'], color=data["color"])
-#
-# centroids = update_centroids(data)
-# for i in range(k):
-#     plt.scatter(*centroids[i], color=colmap[i],marker=(5, 1),edgecolors='k')
-#
-#
-# # plt.scatter(data['c0'], data['c1'], color=data["color"])
-#
-# # print(data[['closest']+['infeasility_cluster_0']+['infeasility_cluster_1']+['infeasility_cluster_2']])
-#
-# # print(data[['closest']+['infeasility_cluster_0']+['infeasility_cluster_1']+['infeasility_cluster_2']])
-# # print(restrictions.head(5))
+# # print(data[['closest']+['distance_closest']].groupby('closest').mean().mean())
 # # print(infeasibility(data))
-# # print(get_own_cluster(data, 0))
-#
-# # print(data.shape[0])
-# # for j in range(10):
-# #     plt.figure(j+2)
-# #     plt.xlim(0, 10)
-# #     plt.ylim(0, 10)
-# #     plt.gca().set_aspect('equal')
-# #     centroids = update_centroids(data)
 # #
-# #
-# #     data = assignation(data, centroids)
-# #     plt.scatter(data['c0'], data['c1'], color=data["color"])
-# #     for i in range(k):
-# #         plt.scatter(*centroids[i], color=colmap[i],marker=(5, 1),edgecolors='b')
-# #     print(centroids)
-# plt.show()
-# # print(data[col_names + ['closest']].groupby('closest').count().shape[0])
 #
+# # print(data.head(5))
+# # print(data.dtypes)
 #
+# # print(restrictions.iloc[6].shape)
+#
+# x = 0
+# old_inf = -1
+# new_inf = infeasibility(data)
+# data_old = data
+#
+# while (old_inf != new_inf):
+#     print(data[['closest']+['distance_closest']].groupby('closest').mean().mean())
+#     print("Inf:  ", new_inf, "           It: ", x)
+#     data_old = data
+#     centroids = update_centroids(data)
+#     data = regular_assignation(data, centroids)
+#     data = calculate_distance_closest(data, centroids)
+#     x = x+1
+#     old_inf = new_inf
+#     new_inf = infeasibility(data)
+#
+# # print(data[['closest']+['distance_closest']].groupby('closest').mean().mean())
+# # print(infeasibility(data))
+#
+# if(data_old.equals(data)):
+#     print("They are equal")
+# else:
+#     print("They are not equal")
+#
+# print((data[['closest']+['c0']].groupby('closest').count()))
+
+#############################################3
 
 # crear el vecindario de forma parejas (i, k), que pasaria si a punto i le asigno k
 # si i ya esta en cluster k, voy al siguiente
