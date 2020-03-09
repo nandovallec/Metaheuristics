@@ -3,9 +3,14 @@ import numpy as np
 import matplotlib.pyplot as plt
 import random
 import time
-from sklearn.utils import shuffle
+from scipy.spatial.distance import pdist, squareform, cdist
+import math
+dataset_name = "ecoli"
 
-dataset_name = "rand"
+def cost_function(df, centroids):
+    centroids = update_centroids(df)
+    df = calculate_distance_closest(df, centroids)
+
 
 
 def get_neightbour(neightbour_list):
@@ -21,7 +26,13 @@ def get_own_cluster(df, index):
 
 def calculate_distance_closest(df, centr):
     for i in range(len(df.index)):
-        df.at[i,'distance_closest'] = np.linalg.norm(df.loc[i,col_names] - centr[int(df.at[i, 'closest'])])
+        # df.at[i,'distance_closest'] = np.linalg.norm(df.loc[i,col_names] - centr[int(df.at[i, 'closest'])])
+        # df.at[i,'distance_closest'] = np.sqrt(((df.loc[i,col_names]-centr[int(df.at[i, 'closest'])])**2).sum())
+        df.at[i, 'distance_closest'] = math.sqrt(sum([(a - b) ** 2 for a, b in zip(df.loc[i,col_names], centr[int(df.at[i, 'closest'])])]))
+        # print(np.linalg.norm(df.loc[i,col_names] - centr[int(df.at[i, 'closest'])]))
+        # print(np.sqrt(((df.loc[i,col_names]-centr[int(df.at[i, 'closest'])])**2).sum()))
+        # print(math.sqrt(sum([(a - b) ** 2 for a, b in zip(df.loc[i,col_names], centr[int(df.at[i, 'closest'])])])))
+
     # s =
     # df['distance_closest'] = df.apply(lambda row: np.linalg.norm(row[col_names] - centr[row['closest']]), axis=1)
     # print (df.loc[i,col_names])
@@ -128,7 +139,7 @@ def first_assignation(df, centr):
         # df['closest'] = df['closest'].map(lambda x: int(x.lstrip('infeasility_cluster_')))
         # print(df.loc[i, feas_points].min())
     clusters_assigned = (data[['closest']+['c0']].groupby('closest').count().index)
-    print(clusters_assigned)
+    # print(clusters_assigned)
     for i in range(k):
         if not(clusters_assigned.any == i):
             df.at[i, 'closest'] = i
@@ -166,8 +177,9 @@ def regular_assignation(df, centr):
         # df['closest'] = df['closest'].map(lambda x: int(x.lstrip('infeasility_cluster_')))
         # print(df.loc[i, feas_points].min())
 
-    print(count_clusters)
     # print(count_clusters)
+    # print(count_clusters)
+
     return df
 
 
@@ -196,6 +208,8 @@ col_names = []
 for i in range(len(data.columns)):
     col_names.append("c"+str(i))
 data.columns = col_names
+
+
 ########################################################################################################################
 pd.set_option('display.max_columns', None)
 
@@ -213,22 +227,107 @@ data = data.reindex(idx)
 restrictions = restrictions.reindex(idx)
 # data = shuffle(data)
 
+D = squareform(pdist(data))
+max_distance, [I_row, I_col] = np.nanmax(D), np.unravel_index( np.argmax(D), D.shape )
+n_restrictions = ((len(restrictions.index)**2)-(restrictions.isin([0]).sum().sum()))/2
+lambda_value = max_distance/n_restrictions
+# print(lambda_value)
 
 # Local
 ####################################################################
+# Generate neighbourhood
 possible_changes = []
 for i in range(len(data.index)):
     for w in range(k):
         possible_changes.append((i, w))
-
-
 np.random.shuffle(possible_changes)
-# print(possible_changes)
-possible_changes, neigh = get_neightbour(possible_changes)
-# print(possible_changes)
 
+# Generate initial solution
 data['closest'] = np.random.randint(0,k, data.shape[0])
-print(np.asarray(data.groupby('closest').count()))
+
+# Count how many points in each cluster
+cluster_count = np.array(data[['c0']+['closest']].groupby('closest').count())
+
+# Exit if initial solution doesn't have at least a point in each cluster
+if len(cluster_count) != k:
+    exit(1)
+
+n_iterations = 0
+total_infeasibility = infeasibility(data)
+print(total_infeasibility)
+
+print((data[['closest']+['c0']].groupby('closest').count()))
+data['distance_closest']=np.nan
+centroids = update_centroids(data)
+calculate_distance_closest(data, centroids)
+av_dist = data[['closest']+['distance_closest']].groupby('closest').mean().mean().iloc[0]
+
+objective_value = av_dist + lambda_value * (total_infeasibility/2.0)
+possible_changes, neigh = get_neightbour(possible_changes)
+
+print(type(objective_value))
+
+while n_iterations < 100000:
+    n_iterations += 1
+    possible_changes, first_neigh = get_neightbour(possible_changes)
+    first_neigh = neigh
+    old_objective_value = objective_value
+
+    # Save old values in case we need to restore them
+    old_infeasibility = total_infeasibility
+    old_av_dist = av_dist
+    old_cluster = get_own_cluster(data, neigh[0])
+    print("Iteration:    ", n_iterations)
+    print("The inf is: ", total_infeasibility, "    and av.dist:   ", av_dist)
+    print((data[['closest']+['c0']].groupby('closest').count()))
+    print("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
+    while old_objective_value <= objective_value:
+        # print((data[['closest'] + ['c0']].groupby('closest').count()))
+        old_cluster = get_own_cluster(data, neigh[0])
+
+        p_index = neigh[0]
+        new_cluster = neigh[1]
+
+        n_iterations += 1
+
+
+        if cluster_count[old_cluster] == 1 or old_cluster == new_cluster:
+            possible_changes, neigh = get_neightbour(possible_changes)
+            continue
+
+
+        # Subtract the infeasibility and add the new one to get new infeasibility
+        total_infeasibility = total_infeasibility - row_infeasibility(data, p_index)*2
+        data.at[p_index, 'closest'] = new_cluster
+        total_infeasibility = total_infeasibility + row_infeasibility(data, p_index)*2
+
+        # Calculate new average
+        centroids = update_centroids(data)
+        calculate_distance_closest(data, centroids)
+        av_dist = data[['closest'] + ['distance_closest']].groupby('closest').mean().mean().iloc[0]
+
+        # Calculate new objective value
+        objective_value = av_dist + lambda_value * (total_infeasibility/2.0)
+
+        # if (n_iterations > 50):
+        #     print("Iteration:    ", n_iterations)
+        #     print("The inf is: ", total_infeasibility, "    and av.dist:   ", av_dist)
+        #     print((data[['closest'] + ['c0']].groupby('closest').count()))
+        #     print("Old, ", old_objective_value, "       new   ", objective_value)
+
+        # Restore values
+        if old_objective_value <= objective_value:
+            data.at[p_index, 'closest'] = old_cluster
+            total_infeasibility = old_infeasibility
+        # print((data[['closest'] + ['c0']].groupby('closest').count()))
+
+        possible_changes, neigh = get_neightbour(possible_changes)
+
+        if neigh == first_neigh:
+            break
+
+    if neigh == first_neigh:
+        break
 
 
 ###################################################################
@@ -249,6 +348,7 @@ print(np.asarray(data.groupby('closest').count()))
 # data['distance_closest']=np.nan
 # print(data.head(5))
 # data = first_assignation(data, centroids)
+# print("First infeasibility  :", infeasibility(data))
 # print((data[['closest']+['c0']].groupby('closest').count()))
 #
 # data = calculate_distance_closest(data, centroids)
