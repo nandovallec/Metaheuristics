@@ -14,9 +14,7 @@ def calculate_distance_closest(df, centr):
 
 def row_infeasibility(df, row_index):
     infeasibility_points = 0
-    # print(restrictions.shape)
     r = restrictions.iloc[row_index]
-    # print(len(r), "yyyy")
 
     for c in range(r.size):
         if c != row_index:
@@ -35,7 +33,7 @@ def row_infeasibility(df, row_index):
 def row_infeasibility_first(df, row_index):
     infeasibility_points = 0
     r = restrictions.iloc[row_index]
-    own_group = get_own_cluster(df, row_index)
+
     for c in range(row_index):
         if r[c] == 1:
             if not same_cluster(df, row_index, c):
