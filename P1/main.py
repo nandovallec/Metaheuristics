@@ -95,7 +95,7 @@ def row_infeasibility(df, row_index):
 def row_infeasibility_first(df, row_index):
     infeasibility_points = 0
     r = restrictions.iloc[row_index]
-
+    print(r)
     for c in range(row_index):
         if r[c] == 1:
             if not same_cluster(df, row_index, c):
@@ -198,8 +198,19 @@ def count_each_cluster(df):
 
 
 def calculate_av_distance_numpy(df):
-    return np.sum(df[:,distance_closest_index])/df.shape[0]
+    av = np.zeros(k)
+    av_count = np.zeros(k)
+    for i in range(df.shape[0]):
+        av[int(df[i][closest_index])] += df[i][distance_closest_index]
+        av_count[int(df[i][closest_index])]+=1
 
+    print(av)
+    print(av_count)
+
+    av = av/av_count
+
+    # return np.sum(df[:,distance_closest_index])/df.shape[0]
+    return np.mean(av)
 
 def get_neightbour(neightbour_list):
     neighbour = neightbour_list[0]
@@ -229,7 +240,7 @@ def row_infeasibility_numpy(df, row_index):
 def row_infeasibility_first_numpy(df, row_index):
     infeasibility_points = 0
     r = restrictions_numpy[row_index]
-
+    # print(df[10,:])
     for c in range(row_index):
         if c != row_index:
             if r[c] == 1:
@@ -266,7 +277,7 @@ def update_centroids_numpy(df):
 if dataset_name == "iris":
     k = 3
     data_path = "./iris_set.dat"
-    restrictions_path = "./iris_set_const_10.const"
+    restrictions_path = "./iris_set_const_20.const"
 elif dataset_name == "ecoli":
     k = 8
     data_path = "./ecoli_set.dat"
@@ -321,199 +332,204 @@ distance_closest_index = closest_index+1
 
 # Local
 ####################################################################
-# # Generate neighbourhood
-# possible_changes = []
-# for i in range(len(data.index)):
-#     for w in range(k):
-#         possible_changes.append((i, w))
-# np.random.shuffle(possible_changes)
-#
-# # Generate initial solution
-# data['closest'] = np.random.randint(0,k, data.shape[0])
-#
-# # Count how many points in each cluster
-# cluster_count = np.array(data[['c0']+['closest']].groupby('closest').count())
-#
-# # Exit if initial solution doesn't have at least a point in each cluster
-# if len(cluster_count) != k:
-#     exit(1)
-#
-# # Transform it into a numpy array
-# pandas_df = data
-# restrictions_numpy = np.asarray(restrictions)
-#
-# # Create necessary columns
-# data['distance_closest']=np.nan
-# data = np.asarray(data)
-# centroids = update_centroids_numpy(data)
-# calculate_distance_closest_numpy(data, centroids)
-#
-#
-#
-#
-#
-# # This variable will help us print values
-# limit = 0
-# n_iterations = 0
-#
-# # Calculate initial infeasibility
-# total_infeasibility = infeasibility_numpy(data)/2.0
-#
-# av_dist = calculate_av_distance_numpy(data)
-# objective_value = av_dist + lambda_value * total_infeasibility
-# print("Dist: ", av_dist, "  obj: ", objective_value)
-# while n_iterations < 100000:
-#     # n_iterations += 1
-#
-#     # We get the first neightbour
-#     possible_changes, neigh = get_neightbour(possible_changes)
-#     first_neigh = neigh
-#
-#     # Save old values
-#     old_objective_value = objective_value
-#     old_infeasibility = total_infeasibility
-#     old_av_dist = av_dist
-#     old_cluster = data[neigh[0]][closest_index]
-#     # print("NEW: ", total_infeasibility, "      real: ", infeasibility_numpy(data))
-#
-#     first_iteration = False
-#     while old_objective_value <= objective_value and n_iterations < 100000:
-#         n_iterations += 1
-#         possible_changes, neigh = get_neightbour(possible_changes)
-#         if(possible_changes.index(first_neigh) < 5):
-#             print(possible_changes[:5], "     ", possible_changes.index(first_neigh))
-#         # print(neigh, "      ", first_neigh, "    ", possible_changes.index(first_neigh), "     ", first_iteration, "    ", possible_changes[0])
-#         if neigh == first_neigh and first_iteration:
-#             # Break if we already got every possible neighbour
-#             break
-#
-#         first_iteration = True
-#         # Print values in intervals to check if everything is going all right
-#         if n_iterations > limit:
-#             print("Iteration:    ", n_iterations, "    Av. Dist: ", av_dist, "    Inf: ", total_infeasibility, "    Obj:", old_objective_value)
-#             limit += 1000
-#
-#         # Save the original cluster from the point we are going to change
-#         old_cluster = int(data[neigh[0]][closest_index])
-#         p_index = neigh[0]
-#         new_cluster = neigh[1]
-#
-#
-#         # print("In: ", total_infeasibility)
-#         # Subtract the infeasibility and add the new one to get new infeasibility
-#         # print("ANT: ", total_infeasibility, "      real: ", infeasibility_numpy(data)/2, "    calc: ",row_infeasibility_numpy(data, p_index))
-#
-#         total_infeasibility = total_infeasibility - row_infeasibility_numpy(data, p_index)
-#         data[p_index][closest_index] = new_cluster
-#         total_infeasibility = total_infeasibility + row_infeasibility_numpy(data, p_index)
-#         # print("NEW: ", total_infeasibility, "      real: ", infeasibility_numpy(data)/2, "    calc: ",row_infeasibility_numpy(data, p_index))
-#
-#         # print("Out: ", total_infeasibility)
-#
-#         # Calculate new average
-#         centroids = update_centroids_numpy(data)
-#         calculate_distance_closest_numpy(data, centroids)
-#         av_dist = calculate_av_distance_numpy(data)
-#
-#         # Calculate new objective value
-#         objective_value = av_dist + lambda_value * total_infeasibility
-#
-#         # Restore values
-#         if old_objective_value <= objective_value:
-#             data[p_index][closest_index] = old_cluster
-#             total_infeasibility = old_infeasibility
-#
-#     if neigh == first_neigh:
-#         print("No more neighbours")
-#         break
-#
-# print("Total inf: ", total_infeasibility)
-# print("Inf. Calculated: " , infeasibility_numpy(data)/2.0)
-# print(count_each_cluster(data))
-# print("Aver ", calculate_av_distance_numpy(data))
-# print("Obj ",objective_value)
+# Generate neighbourhood
+possible_changes = []
+for i in range(len(data.index)):
+    for w in range(k):
+        possible_changes.append((i, w))
+np.random.shuffle(possible_changes)
+
+# Generate initial solution
+data['closest'] = np.random.randint(0,k, data.shape[0])
+
+# Count how many points in each cluster
+cluster_count = np.array(data[['c0']+['closest']].groupby('closest').count())
+
+# Exit if initial solution doesn't have at least a point in each cluster
+if len(cluster_count) != k:
+    exit(1)
+
+# Transform it into a numpy array
+pandas_df = data
+restrictions_numpy = np.asarray(restrictions)
+
+# Create necessary columns
+data['distance_closest']=np.nan
+data = np.asarray(data)
+centroids = update_centroids_numpy(data)
+calculate_distance_closest_numpy(data, centroids)
+
+
+
+
+
+# This variable will help us print values
+limit = 0
+n_iterations = 0
+
+# Calculate initial infeasibility
+total_infeasibility = infeasibility_numpy(data)/2.0
+
+av_dist = calculate_av_distance_numpy(data)
+objective_value = av_dist + lambda_value * total_infeasibility
+print("Dist: ", av_dist, "  obj: ", objective_value)
+while n_iterations < 100000:
+    # n_iterations += 1
+
+    # We get the first neightbour
+    possible_changes, neigh = get_neightbour(possible_changes)
+    first_neigh = neigh
+
+    # Save old values
+    old_objective_value = objective_value
+    old_infeasibility = total_infeasibility
+    old_av_dist = av_dist
+    old_cluster = data[neigh[0]][closest_index]
+    # print("NEW: ", total_infeasibility, "      real: ", infeasibility_numpy(data))
+    number_cluster = count_each_cluster(data)
+    first_iteration = False
+    while old_objective_value <= objective_value and n_iterations < 100000:
+        n_iterations += 1
+        possible_changes, neigh = get_neightbour(possible_changes)
+        if(possible_changes.index(first_neigh) < 5):
+            print(possible_changes[:5], "     ", possible_changes.index(first_neigh))
+        # print(neigh, "      ", first_neigh, "    ", possible_changes.index(first_neigh), "     ", first_iteration, "    ", possible_changes[0])
+        if neigh == first_neigh and first_iteration:
+            # Break if we already got every possible neighbour
+            break
+
+
+        first_iteration = True
+        # Print values in intervals to check if everything is going all right
+        if n_iterations > limit:
+            print("Iteration:    ", n_iterations, "    Av. Dist: ", av_dist, "    Inf: ", total_infeasibility, "    Obj:", old_objective_value)
+            limit += 1000
+
+        # Save the original cluster from the point we are going to change
+        old_cluster = int(data[neigh[0]][closest_index])
+        p_index = neigh[0]
+        new_cluster = neigh[1]
+
+        if number_cluster[old_cluster] == 1:
+            continue
+
+        # print("In: ", total_infeasibility)
+        # Subtract the infeasibility and add the new one to get new infeasibility
+        # print("ANT: ", total_infeasibility, "      real: ", infeasibility_numpy(data)/2, "    calc: ",row_infeasibility_numpy(data, p_index))
+
+        total_infeasibility = total_infeasibility - row_infeasibility_numpy(data, p_index)
+        data[p_index][closest_index] = new_cluster
+        total_infeasibility = total_infeasibility + row_infeasibility_numpy(data, p_index)
+        # print("NEW: ", total_infeasibility, "      real: ", infeasibility_numpy(data)/2, "    calc: ",row_infeasibility_numpy(data, p_index))
+
+        # print("Out: ", total_infeasibility)
+
+        # Calculate new average
+        centroids = update_centroids_numpy(data)
+        calculate_distance_closest_numpy(data, centroids)
+        av_dist = calculate_av_distance_numpy(data)
+
+        # Calculate new objective value
+        objective_value = av_dist + lambda_value * total_infeasibility
+
+        # Restore values
+        if old_objective_value <= objective_value:
+            data[p_index][closest_index] = old_cluster
+            total_infeasibility = old_infeasibility
+
+    if neigh == first_neigh:
+        print("No more neighbours")
+        break
+
+print("Total inf: ", total_infeasibility)
+print("Inf. Calculated: " , infeasibility_numpy(data)/2.0)
+print(update_centroids_numpy(data))
+print(count_each_cluster(data))
+print("Aver ", calculate_av_distance_numpy(data))
+print("Obj ",objective_value)
 
 ###################################################################
 # GREEDY
-###############################################################3
-# f1 = plt.figure(1)
-# plt.xlim(0, 10)
-# plt.ylim(0, 10)
-# plt.gca().set_aspect('equal')
-# Generate random centroids
-centroids = []
-for i in range(k):
-    centroids.append(random.uniform(minim, maxim)/1.5)
-
-centroids = np.array(centroids)
-
-data['closest']=np.nan
-data['distance_closest']=np.nan
-for i in range(k):
-    data['infeasility_cluster_{}'.format(i)] = np.nan
-
-# print(data)
-infeasibility_cluster_index = distance_closest_index+1
-pandas_df = data
-restrictions_numpy = np.copy(np.asarray(restrictions))
-# data = np.copy(np.asarray(data))
-data = np.copy(np.asarray(data))
-
-# print(data.head(5))
-data = first_assignation_numpy(data, centroids)
-# pandas_df = first_assignation(pandas_df, centroids)
-# print("Numpy: ",count_each_cluster(data))
-# print("Pandas: ", (np.asarray(pandas_df[['closest'] + ['c0']].groupby('closest').count())))
-# # # print(data[10])
-# # # print(pandas_df.iloc[10,:])
-# #
-# print("First infeasibility numpy :", infeasibility_numpy(data))
-# print("First infeasibility pandas :", infeasibility(pandas_df))
-# # centroids = update_centroids(pandas_df)
-# # #
-# data = regular_assignation_numpy(data, centroids)
-# data = calculate_distance_closest_numpy(data, centroids)
-# #
-# pandas_df = regular_assignation(pandas_df, centroids)
-# pandas_df = calculate_distance_closest(pandas_df, centroids)
-# #
-# #
-# #
-# print("First infeasibility numpy2 :", infeasibility_numpy(data))
-# print("First infeasibility pandas :", row_infeasibility(pandas_df,5))
-
-# data = calculate_d(data, centroids)
-# data2 = data
-
-# print((data[['closest']+['c0']].groupby('closest').count()))
-
-# print(data[['closest']+['distance_closest']].groupby('closest').mean().mean())
-# print(infeasibility(data))
+# ###############################################################3
+# # f1 = plt.figure(1)
+# # plt.xlim(0, 10)
+# # plt.ylim(0, 10)
+# # plt.gca().set_aspect('equal')
+# # Generate random centroids
+# centroids = []
+# for i in range(k):
+#     centroids.append(random.uniform(minim, maxim)/1.5)
 #
-
-# print(data.head(5))
-# print(data.dtypes)
-
-# print(restrictions.iloc[6].shape)
-
-old_inf = -1
-new_inf = infeasibility_numpy(data)
-data_old = data
-l=0
-while (old_inf != new_inf):
-    # print("Old ",new_inf)
-    print("Inf: ", new_inf,"   It: ", l)
-    centroids = update_centroids_numpy(data)
-    data = regular_assignation_numpy(data, centroids)
-    data = calculate_distance_closest_numpy(data, centroids)
-    old_inf = new_inf
-    new_inf = infeasibility_numpy(data)
-    # print("New ",new_inf)
-    l+=1
-
-
-
-print("Total inf: ", new_inf)
-print("Inf. Calculated: " , infeasibility_numpy(data))
-print(count_each_cluster(data))
-print("Aver ", calculate_av_distance_numpy(data))
+# centroids = np.array(centroids)
+#
+# data['closest']=np.nan
+# data['distance_closest']=np.nan
+# for i in range(k):
+#     data['infeasility_cluster_{}'.format(i)] = np.nan
+#
+# # print(data)
+# infeasibility_cluster_index = distance_closest_index+1
+# pandas_df = data
+# restrictions_numpy = np.copy(np.asarray(restrictions))
+# # data = np.copy(np.asarray(data))
+# data = np.copy(np.asarray(data))
+#
+# # print(data.head(5))
+# data = first_assignation_numpy(data, centroids)
+# # pandas_df = first_assignation(pandas_df, centroids)
+# # print("Numpy: ",count_each_cluster(data))
+# # print("Pandas: ", (np.asarray(pandas_df[['closest'] + ['c0']].groupby('closest').count())))
+# # # # print(data[10])
+# # # # print(pandas_df.iloc[10,:])
+# # #
+# # print("First infeasibility numpy :", infeasibility_numpy(data))
+# # print("First infeasibility pandas :", infeasibility(pandas_df))
+# # # centroids = update_centroids(pandas_df)
+# # # #
+# # data = regular_assignation_numpy(data, centroids)
+# # data = calculate_distance_closest_numpy(data, centroids)
+# # #
+# # pandas_df = regular_assignation(pandas_df, centroids)
+# # pandas_df = calculate_distance_closest(pandas_df, centroids)
+# # #
+# # #
+# # #
+# # print("First infeasibility numpy2 :", infeasibility_numpy(data))
+# # print("First infeasibility pandas :", row_infeasibility(pandas_df,5))
+#
+# # data = calculate_d(data, centroids)
+# # data2 = data
+#
+# # print((data[['closest']+['c0']].groupby('closest').count()))
+#
+# # print(data[['closest']+['distance_closest']].groupby('closest').mean().mean())
+# # print(infeasibility(data))
+# #
+#
+# # print(data.head(5))
+# # print(data.dtypes)
+#
+# # print(restrictions.iloc[6].shape)
+#
+# old_inf = -1
+# new_inf = infeasibility_numpy(data)
+# data_old = data
+# l=0
+# ##Usar idx para acceder
+# while (old_inf != new_inf):
+#     # print("Old ",new_inf)
+#     print("Inf: ", new_inf,"   It: ", l)
+#     centroids = update_centroids_numpy(data)
+#     data = regular_assignation_numpy(data, centroids)
+#     data = calculate_distance_closest_numpy(data, centroids)
+#     old_inf = new_inf
+#     new_inf = infeasibility_numpy(data)
+#     # print("New ",new_inf)
+#     l+=1
+#
+#
+#
+# print("Total inf: ", new_inf)
+# print("Inf. Calculated: " , infeasibility_numpy(data))
+# print(count_each_cluster(data))
+# print("Aver ", calculate_av_distance_numpy(data))
