@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 import time
-# import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt
 import random
 from scipy.spatial.distance import pdist, squareform, cdist
 import math
@@ -14,7 +14,7 @@ if len(sys.argv) == 6:
     seed_asigned = int(sys.argv[4])
     lambda_var = float(sys.argv[5])
 elif len(sys.argv) == 1:
-    mode = "local"
+    mode = "greedy"
     dataset_name = "ecoli"
     restr_level = 10
     seed_asigned = 456
@@ -23,10 +23,10 @@ else:
     print("Wrong number of arguments.")
     exit(1)
 #############################
-inf_gr = []
-inf_lo = []
-it_gr = []
-it_lo = []
+inf_list1 = []
+it_list1 = []
+inf_list2 = []
+it_list2 = []
 
 def printIndexCluster(df):
     d = [[] for i in range(k)]
@@ -281,7 +281,6 @@ if mode == "local":
     D = squareform(pdist(data))
     max_distance, [I_row, I_col] = np.nanmax(D), np.unravel_index(np.argmax(D), D.shape)
     n_restrictions = (((len(restrictions.index) ** 2) - (restrictions.isin([0]).sum().sum())) / 2)-data.shape[0]
-    # print(max_distance)
     lambda_value = (max_distance / n_restrictions) * lambda_var
 
     # Generate neighbourhood
@@ -332,6 +331,10 @@ if mode == "local":
         first_iteration = True
         while old_objective_value <= objective_value and n_iterations < 100000:
             n_iterations += 1
+
+            it_list1.append(n_iterations)
+            inf_list1.append(total_infeasibility)
+
             possible_changes, neigh = get_neightbour(possible_changes)
             if neigh == first_neigh and not first_iteration:
                 repeated = True
@@ -357,9 +360,14 @@ if mode == "local":
             total_infeasibility = total_infeasibility + row_infeasibility_numpy(data, p_index)
             av_count[new_cluster] += 1
 
+
+
             centroids, sum_values_clusters = update_centroids_optimized(data, centroids, sum_values_clusters, p_index, old_cluster, new_cluster, av_count)
             # Calculate new average
             # centroids = update_centroids_numpy(data)
+
+
+
 
             data, sum_dist, old_distance = update_distance(data, centroids, sum_dist, p_index, old_cluster, new_cluster)
             # data, sum_dist, av_count = calculate_distance_cluster_numpy(data, centroids)
@@ -392,6 +400,7 @@ if mode == "local":
     print("Tasa Inf:", total_infeasibility)
     print("Agr:", objective_value)
     print("Time:", elapsed_time)
+    print("NumIter:", n_iterations)
 
     # print(elapsed_time)
 
@@ -419,25 +428,16 @@ elif mode == "greedy":
     restrictions_numpy = np.asarray(restrictions)
     data = np.asarray(data)
 
-#####Transform Restrictions only get half
-    # n_restrictions = (((len(restrictions.index) ** 2) - (restrictions.isin([0]).sum().sum())) / 2)-data.shape[0]
-    # s = np.nonzero(restrictions_numpy)
-    # ran_ind = np.random.permutation(s[0].size)
-    # for l in range(int(n_restrictions/4)*3):
-    #     rrr = ran_ind[l]
-    #     # print(restrictions.at[s[0][rrr],s[1][rrr]])
-    #     restrictions.at[s[0][rrr],s[1][rrr]] = 0
-    # restrictions_numpy = np.asarray(restrictions)
-    #
-    # # print(ran_ind.size)
-#####
-
     data = first_assignation_numpy(data, centroids)
     data, sum_dist, av_count = calculate_distance_cluster_numpy(data, centroids)
 
     data_old = data
     old_clusters = np.zeros(0)
+    n_iterations = 0
     while (not np.array_equal(old_clusters, data[:, cluster_index])):
+        it_list1.append(n_iterations)
+        inf_list1.append(infeasibility_numpy(data))
+        n_iterations += 1
         old_clusters = np.copy(data[:, cluster_index])
         centroids = update_centroids_numpy(data)
         data = regular_assignation_numpy(data, centroids)
@@ -451,7 +451,232 @@ elif mode == "greedy":
     print("Tasa C:", np.mean(sum_dist/av_count))
     print("Tasa Inf:", infeasibility_numpy(data))
     print("Time:", elapsed_time)
+    print("NumIter:", n_iterations)
+
 
 ################RTRYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY
+restr_level = 20
+if dataset_name == "iris":
+    k = 3
+    data_path = "./iris_set.dat"
+    restrictions_path = "./iris_set_const_" + str(restr_level) + ".const"
+elif dataset_name == "ecoli":
+    k = 8
+    data_path = "./ecoli_set.dat"
+    restrictions_path = "./ecoli_set_const_" + str(restr_level) + ".const"
+else:
+    k = 3
+    data_path = "./rand_set.dat"
+    restrictions_path = "./rand_set_const_" + str(restr_level) + ".const"
+
+colmap = ['r', 'g', 'b']
+data = pd.read_csv(data_path, header=None)
+restrictions = pd.read_csv(restrictions_path, header=None)
+col_names = []
+# The name of the df's columns will be 'cX' being X the column's number
+for i in range(len(data.columns)):
+    col_names.append("c" + str(i))
+data.columns = col_names
+n_characteristics = len(col_names)
+
+########################################################################################################################
+pd.set_option('display.max_columns', None)
+
+# Get minimum and maximum values for each column
+minim = data.min()
+maxim = data.max()
+
+# Start random generator
+# seed = int(round(time.time()))
+seed = seed_asigned
+random.seed(seed)
+np.random.seed(seed)
+idx = np.random.permutation(data.index)
+
+# Calculate indexes for numpy array
+cluster_index = int(len(col_names))
+distance_cluster_index = cluster_index + 1
+
+if mode == "local":
+    # Start timing
+    start_time = time.perf_counter()
+
+    D = squareform(pdist(data))
+    max_distance, [I_row, I_col] = np.nanmax(D), np.unravel_index(np.argmax(D), D.shape)
+    n_restrictions = (((len(restrictions.index) ** 2) - (restrictions.isin([0]).sum().sum())) / 2)-data.shape[0]
+    lambda_value = max_distance / n_restrictions * lambda_var
+
+    # Generate neighbourhood
+    possible_changes = []
+    for i in range(len(data.index)):
+        for w in range(k):
+            possible_changes.append((i, w))
+    np.random.shuffle(possible_changes)
+
+    # Generate initial solution
+    data['cluster'] = np.random.randint(0, k, data.shape[0])
+
+    # Count how many points in each cluster
+    cluster_count = np.array(data[['c0'] + ['cluster']].groupby('cluster').count())
+
+    # Exit if initial solution doesn't have at least a point in each cluster
+    if len(cluster_count) != k:
+        exit(1)
+
+    # Transform it into a numpy array
+    restrictions_numpy = np.asarray(restrictions)
+
+    # Create necessary columns
+    data['distance_cluster'] = np.nan
+    data = np.asarray(data)
+
+    centroids = update_centroids_numpy(data)
+    data, sum_dist, av_count = calculate_distance_cluster_numpy(data, centroids)
+
+    n_iterations = 0
+
+    # Calculate initial infeasibility
+    total_infeasibility = infeasibility_numpy(data)
+
+    # Initialize variables
+    objective_value = np.mean(sum_dist/av_count) + lambda_value * total_infeasibility
+    repeated = False
+    sum_values_clusters = sum_instances(data)
+
+    while n_iterations < 100000 and not repeated:
+        # Get first neighbour to be able to compare it later on
+        first_neigh = possible_changes[0]
+
+        # Save old values
+        old_objective_value = objective_value
+        old_infeasibility = total_infeasibility
+        # number_cluster = count_each_cluster(data)
+        first_iteration = True
+        while old_objective_value <= objective_value and n_iterations < 100000:
+            n_iterations += 1
+
+            it_list2.append(n_iterations)
+            inf_list2.append(total_infeasibility)
+
+            possible_changes, neigh = get_neightbour(possible_changes)
+            if neigh == first_neigh and not first_iteration:
+                repeated = True
+                # Break if we already got every possible neighbour
+                break
+
+            first_iteration = False
+
+            # Save the original cluster from the point we are going to change
+            old_cluster = int(data[neigh[0]][cluster_index])
+            p_index = neigh[0]
+            new_cluster = neigh[1]
+
+            # Skip if the cluster only have 1 element
+            if av_count[old_cluster] == 1 or old_cluster == new_cluster:
+                continue
+
+            total_infeasibility = total_infeasibility - row_infeasibility_numpy(data, p_index)
+            av_count[old_cluster] -= 1
+
+            data[p_index][cluster_index] = new_cluster
+
+            total_infeasibility = total_infeasibility + row_infeasibility_numpy(data, p_index)
+            av_count[new_cluster] += 1
+
+
+
+            centroids, sum_values_clusters = update_centroids_optimized(data, centroids, sum_values_clusters, p_index, old_cluster, new_cluster, av_count)
+            # Calculate new average
+            # centroids = update_centroids_numpy(data)
+
+
+
+
+            data, sum_dist, old_distance = update_distance(data, centroids, sum_dist, p_index, old_cluster, new_cluster)
+            # data, sum_dist, av_count = calculate_distance_cluster_numpy(data, centroids)
+
+            # Calculate new objective value
+            objective_value = np.mean(sum_dist/av_count) + lambda_value * total_infeasibility
+
+            # Restore values
+            if old_objective_value <= objective_value:
+                data[p_index][cluster_index] = old_cluster
+                total_infeasibility = old_infeasibility
+                av_count[old_cluster] += 1
+                av_count[new_cluster] -= 1
+                data, sum_dist = undo_distance(data, sum_dist, p_index, old_cluster, new_cluster, old_distance)
+                centroids, sum_values_clusters = update_centroids_optimized(data, centroids, sum_values_clusters,
+                                                                            p_index, new_cluster, old_cluster, av_count)
+
+
+    #Finish timing
+    elapsed_time = time.perf_counter() - start_time
+
+    centroids = update_centroids_numpy(data)
+    data, sum_dist, av_count = calculate_distance_cluster_numpy(data, centroids)
+    total_infeasibility = infeasibility_numpy(data)
+    objective_value = np.mean(sum_dist / av_count) + lambda_value * total_infeasibility
+
+    # print("For lambda var:", lambda_var)
+    print("Tasa C:", np.mean(sum_dist/av_count))
+    # print("Iter:", n_iterations)
+    print("Tasa Inf:", total_infeasibility)
+    print("Agr:", objective_value)
+    print("Time:", elapsed_time)
+    print("NumIter:", n_iterations)
+
+
+elif mode == "greedy":
+    # Start timing
+    start_time = time.perf_counter()
+
+    # Generate random centroids
+    centroids = []
+    for i in range(k):
+        centroids.append(random.uniform(minim, maxim) / 1.5)
+
+    centroids = np.array(centroids)
+    data['cluster'] = np.nan
+    data['distance_cluster'] = np.nan
+    for i in range(k):
+        data['infeasility_cluster_{}'.format(i)] = np.nan
+
+    infeasibility_cluster_index = distance_cluster_index + 1
+    restrictions_numpy = np.asarray(restrictions)
+    data = np.asarray(data)
+
+    data = first_assignation_numpy(data, centroids)
+    data, sum_dist, av_count = calculate_distance_cluster_numpy(data, centroids)
+
+    data_old = data
+    old_clusters = np.zeros(0)
+    n_iterations = 0
+    while (not np.array_equal(old_clusters, data[:, cluster_index])):
+        it_list2.append(n_iterations)
+        inf_list2.append(infeasibility_numpy(data))
+        n_iterations += 1
+        old_clusters = np.copy(data[:, cluster_index])
+        centroids = update_centroids_numpy(data)
+        data = regular_assignation_numpy(data, centroids)
+
+    # Finish timing
+    elapsed_time = time.perf_counter() - start_time
+
+    centroids = update_centroids_numpy(data)
+    data, sum_dist, av_count = calculate_distance_cluster_numpy(data, centroids)
+
+    print("Tasa C:", np.mean(sum_dist / av_count))
+    print("Tasa Inf:", infeasibility_numpy(data))
+    print("Time:", elapsed_time)
+    print("NumIter:", n_iterations)
+
+##########################################
+plt.plot(it_list1, inf_list1, label="10% R")
+plt.plot(it_list2, inf_list2, label="20% R")
+plt.title(mode.capitalize()+" "+dataset_name.capitalize())
+plt.xlabel("Iterations")
+plt.ylabel("Infeasibility")
+plt.legend()
+plt.show()
 
 
