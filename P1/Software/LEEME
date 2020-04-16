@@ -1,0 +1,9 @@
+Se ha considerado no crear carpeta BIN ya que los programas son ejecutables.
+
+main.py: Programa principal con ambos algoritmos. Se puede ejecutar con o sin argumentos.
+
+comparison.py: Ejecuta el programa principal de manera iterativa para y crea las tablas de valores con los resultados. Sin argumentos.
+
+extra_analysis: Modificación del programa original. Crea las gráficas para comparar grados de convergencia.
+
+lambda_mod: Modificación del programa original. Crea las gráficas para comparar resultados según lambda.
