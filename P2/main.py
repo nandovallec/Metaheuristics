@@ -7,25 +7,38 @@ from scipy.spatial.distance import pdist, squareform, cdist
 import math
 import sys
 ##########################
-if len(sys.argv) == 6:
+if len(sys.argv) == 10:
     mode = sys.argv[1]
     dataset_name = sys.argv[2]
     restr_level = int(sys.argv[3])
     seed_asigned = int(sys.argv[4])
     lambda_var = float(sys.argv[5])
+    n_population = int(sys.argv[6])
+    mutation_prob = float(sys.argv[7])
+    uni_cross = sys.argv[8] == "si"
+    two_point_best_first = sys.argv[9] == "si"
 elif len(sys.argv) == 1:
     mode = "generational"          # generational or steady (state)
-    dataset_name = "ecoli"
+    dataset_name = "newthyroid"
     restr_level = 10
     seed_asigned = 456
     lambda_var = 1
     n_population = 50
+    mutation_prob = 0.001
     uni_cross = False
     two_point_best_first = True
 else:
     print("Wrong number of arguments.")
     exit(1)
 #############################
+if uni_cross:
+    name_file = ("genetic_"+mode+"_"+dataset_name+"_"+str(restr_level)+"_seed_"+str(seed_asigned)+"_uni")
+elif two_point_best_first:
+    name_file = ("genetic_"+mode+"_"+dataset_name+"_"+str(restr_level)+"_seed_"+str(seed_asigned)+"_two_BestFirst")
+else:
+    name_file = ("genetic_"+mode+"_"+dataset_name+"_"+str(restr_level)+"_seed_"+str(seed_asigned)+"_two_BestLast")
+
+f = open("./data_collected/" + name_file + ".csv", "w")
 
 
 def calculate_distance_cluster_numpy(data, centr, clusters, distance_clusters):
@@ -88,17 +101,15 @@ def row_infeasibility_first_numpy(df, row_index):
 
 def row_infeasibility_partial(cluster, row_index):
     infeasibility_points = 0
-    r = restrictions_numpy[row_index][row_index+1:]
 
     own = cluster[row_index]
 
-    # infeasibility_points += len([1 for i in np.where(r == 1)[0] if not(cluster[i + row_index + 1] == own)])
-    for c in np.where(r == 1)[0]:
+    for c in pos_ones[row_index]:
         if not (cluster[c + row_index + 1] == own):
             infeasibility_points += 1
 
     # infeasibility_points += len([1 for i in np.where(r == -1)[0] if (cluster[i + row_index + 1] == own)])
-    for c in np.where(r == -1)[0]:
+    for c in pos_neg_ones[row_index]:
         if cluster[c + row_index + 1] == own:
             infeasibility_points += 1
     return infeasibility_points
@@ -207,7 +218,6 @@ for i in range(len(data.columns)):
 data.columns = col_names
 n_characteristics = len(col_names)
 n_instances = data.shape[0]
-mutation_prob = 0.001
 
 if mode == "steady":
     n_selected = 2
@@ -241,7 +251,6 @@ distance_cluster_index = cluster_index + 1
 
 #####################################################################
 
-
 D = squareform(pdist(data))
 max_distance, [I_row, I_col] = np.nanmax(D), np.unravel_index(np.argmax(D), D.shape)
 n_restrictions = (((len(restrictions.index) ** 2) - (restrictions.isin([0]).sum().sum())) / 2) - data.shape[0]
@@ -263,6 +272,19 @@ population_objetive_value = np.empty(n_population, dtype=float)
 # Transform it into a numpy array
 restrictions_numpy = np.asarray(restrictions)
 data_arr = np.asarray(data)
+mean_deviation = np.zeros(n_population)
+
+pos_ones = []
+pos_neg_ones = []
+
+for i in range(n_instances):
+    r = restrictions_numpy[i][i+1:]
+    pos_ones.append(np.nonzero(r == 1)[0])
+    pos_neg_ones.append(np.nonzero(r == -1)[0])
+    # print(pos_ones[0])
+
+pos_ones = np.asarray(pos_ones)
+pos_neg_ones = np.asarray(pos_neg_ones)
 
 for i in range(n_population):
     # Generate initial solution
@@ -284,7 +306,9 @@ for i in range(n_population):
 
     population_infeasibility[i] = infeasibility_numpy(population_cluster[i])
 
-    population_objetive_value[i] = np.mean(population_sum_dist[i]/population_av_count[i]) + lambda_value * population_infeasibility[i]
+    mean_deviation[i] = np.mean(population_sum_dist[i]/population_av_count[i])
+
+    population_objetive_value[i] = mean_deviation[i] + lambda_value * population_infeasibility[i]
 
     # population_sum_values_clusters[i] = sum_instances(data_arr, population_cluster[i])
 
@@ -294,7 +318,7 @@ finish_ini = time.perf_counter()
 elapsed_time = finish_ini - start_time
 print("Initializing: ", elapsed_time)
 
-evaluations = 0
+evaluations = n_population
 ev_l = 100
 # Modelo Estacionario
 
@@ -308,8 +332,16 @@ children_objetive_value = np.empty(n_selected, dtype=float)
 # children_sum_values_clusters = np.empty([n_selected, k, n_characteristics], dtype=float)
 
 selected = np.empty(n_selected, dtype=int)
+# print("Evaluacion: ", evaluations, "Best Objetivo: ", np.min(population_objetive_value), "Media Objetivo: ", np.mean(population_objetive_value))
+f.write("Evaluations,BestObjetivo,MediaDesviacionHijos,MediaInfeasibilityHijos,MediaObjetivoHijos,MediaObjetivo")
+f.write('\n')
 
-while evaluations < 100000:
+f.write(str(evaluations) + "," + str(np.min(population_objetive_value)) + "," + str(np.mean(mean_deviation)) + "," +
+        str(np.mean(children_infeasibility)) + "," + str(np.mean(children_objetive_value)) + "," + str(
+    np.mean(population_objetive_value)))
+f.write('\n')
+
+while evaluations < 10000:
     best_selected = False
     ######################## Selection #######################################
     for i in range(n_selected):
@@ -359,8 +391,29 @@ while evaluations < 100000:
 
     #########################################################################
 
-    if np.any(population_objetive_value == np.nan) or np.any(children == np.nan):
-        print("aaaaaaaaaaaaaaa")
+    ######################## Fixing ########################################
+
+    # Fix if there are empty clusters
+    count_new = np.empty((n_selected,k))
+    i = 0
+
+    while i < n_new_children:
+        full_c, count= np.unique(children[i], return_counts=True)
+        for x in range(len(full_c)):
+            count_new[i][full_c[x]] = count[x]
+        if len(full_c) != k:
+            w = 0
+            for h in range(k):
+                if h not in full_c:
+                    while count_new[i][children[i][w]] < k:
+                        w += 1
+                    children[i][w] = h
+                    w+=1
+
+        i += 1
+
+    #########################################################################
+
 
     ######################## Mutation ######################################
     # Since is for the stationary approach we do the mutation at the level of the gen
@@ -372,17 +425,30 @@ while evaluations < 100000:
             # print("MUT")
             mutation_index = np.random.randint(0, n_instances)
             n_c = np.random.randint(0, k)
-            if(children[0][mutation_index] == n_c):
-                n_c= (n_c+1)%k
+            # print(count_new)
+            while count_new[0][children[0][mutation_index]] <= 1:
+                # print("a")
+                mutation_index += 1
+                if mutation_index >= n_instances:
+                    mutation_index -= n_instances
 
-            children[1][mutation_index] = n_c
+            if children[0][mutation_index] == n_c:
+                n_c = (n_c+1)%k
+
+            children[0][mutation_index] = n_c
 
         if np.random.rand() < mutation_limit_steady:
             # print("MUT")
             mutation_index = np.random.randint(0, n_instances)
+
+            while count_new[1][children[1][mutation_index]] <= 1:
+                mutation_index += 1
+                if mutation_index >= n_instances:
+                    mutation_index -= n_instances
+
             n_c = np.random.randint(0, k)
             if children[1][mutation_index] == n_c:
-                n_c= (n_c+1)%k
+                n_c = (n_c + 1) % k
 
             children[1][mutation_index] = n_c
 
@@ -392,6 +458,17 @@ while evaluations < 100000:
         for i in range(n_mutation):
             ind_crom, ind_gen = divmod(mutation_index[i], n_instances)
             n_c = np.random.randint(0, k)
+
+            if ind_crom >= n_new_children:
+                full_c, count = np.unique(children[ind_crom], return_counts=True)
+                for x in range(len(full_c)):
+                    count_new[ind_crom][full_c[x]] = count[x]
+
+            while count_new[ind_crom][children[ind_crom][ind_gen]] <= 1:
+                ind_gen += 1
+                if ind_gen >= n_instances:
+                    ind_gen -= n_instances
+
             if children[ind_crom][ind_gen] == n_c:
                 n_c= (n_c+1)%k
 
@@ -400,48 +477,14 @@ while evaluations < 100000:
 
     #########################################################################
 
-    # print(children[0])
-    # for i in range(n_instances):
-    #     children[0][i] = 0
-    # print(children[0])
+    # if np.any(population_objetive_value == np.nan) or np.any(children == np.nan):
+    #     print("Error")
+    #     exit(1)
 
 
-    ######################## Fixing ########################################
-    # print(children[5][n_instances-2])
-    # for i in range(n_instances):
-    #     # if children[5][i] == 3 or children[5][i] == 4 or children[5][i] == 5or children[5][i] == 6:
-    #         children[5][i] = 3
-    # Fix if there are empty clusters
-    i = 0
-    while i < n_selected:
-        full_c, count= np.unique(children[i], return_counts=True)
-        if len(full_c) != k:
-            w = 0
-            c = np.zeros(k)
-            for x in range(len(full_c)):
-                c[full_c[x]] = count[x]
-            # print(full_c)
-            # print(c)
-            for h in range(k):
-                if h not in full_c:
-                    while c[children[i][w]] < k:
-                        w += 1
-                    children[i][w] = h
-                    w+=1
-
-        i += 1
-
-    #########################################################################
-
-    for i in range(n_selected):
-        if len(np.unique(children[i])) != k:
-            print("En iteracion ",i, "solo hay ", len(np.unique(children[i])) ," hijos: ", np.unique(children[i]))
-    # print(np.unique(children))
-    # children_cluster = np.empty(n_selected, dtype=int)
-
-    # exit(0)
-    if evaluations == 1155:
-        print("AAAAAAAAA", best_selected, "   BB", np.min(population_objetive_value))
+    # for i in range(n_selected):
+    #     if len(np.unique(children[i])) != k:
+    #         print("En iteracion ",i, "solo hay ", len(np.unique(children[i])) ," hijos: ", np.unique(children[i]))
 
     ######################## Calculate Fitness  #############################
 
@@ -455,15 +498,15 @@ while evaluations < 100000:
             = calculate_distance_cluster_numpy(data_arr, children_centroids[i], children_cluster[i], children_distance_cluster[i])
 
         children_infeasibility[i] = infeasibility_numpy(children_cluster[i])
-        children_objetive_value[i] = np.mean(children_sum_dist[i]/children_av_count[i]) + lambda_value * children_infeasibility[i]
+        mean_deviation[i] =  np.mean(children_sum_dist[i]/children_av_count[i])
+        children_objetive_value[i] = mean_deviation[i] + lambda_value * children_infeasibility[i]
 
         # children_sum_values_clusters[i] = sum_instances(data_arr, children_cluster[i])
 
     if mode == "generational":
         for i in range(n_new_children, n_selected):
-            children_objetive_value[i] = population_objetive_value[selected[i]]
-            if evaluations == 1190:
-                print("DD", children_objetive_value[i])
+            children_objetive_value[i] = np.copy(population_objetive_value[selected[i]])
+
 
     #########################################################################
 
@@ -503,16 +546,21 @@ while evaluations < 100000:
         population_objetive_value = np.copy(children_objetive_value)
     #########################################################################
 
-
+    # print("Evaluacion: ", evaluations, "Best Objetivo: ", np.min(population_objetive_value), "Media Objetivo: ", np.mean(population_objetive_value))
+    f.write(str(evaluations) + "," + str(np.min(population_objetive_value))+ ","+ str(np.mean(mean_deviation))+ ","+
+            str(np.mean(children_infeasibility))+","+str(np.mean(children_objetive_value))+","+str(np.mean(population_objetive_value)))
+    f.write('\n')
     if evaluations>ev_l:
         ev_l += 100
-        d = sorted(population_objetive_value)
-        print("It: ",evaluations, "   ",d, "   ", n_new_children)
+        # d = sorted(population_objetive_value)
+        # print("It: ",evaluations, "   ",d, "   ", n_new_children)
+        print("It: ",evaluations)
 
 
 
 
 elapsed_time2 = time.perf_counter() - finish_ini
+f.write("Tiempo Consumido: "+ str(elapsed_time2))
 
 print("Initializing: ", elapsed_time)
 print("Calculating for 1000: ", elapsed_time2)
