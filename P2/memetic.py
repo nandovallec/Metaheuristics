@@ -7,33 +7,33 @@ from scipy.spatial.distance import pdist, squareform, cdist
 import math
 import sys
 ##########################
-# if len(sys.argv) == 12:
-#     mode = sys.argv[1]
-#     dataset_name = sys.argv[2]
-#     restr_level = int(sys.argv[3])
-#     seed_asigned = int(sys.argv[4])
-#     lambda_var = float(sys.argv[5])
-#     n_population = int(sys.argv[6])
-#     mutation_prob = float(sys.argv[7])
-#     uni_cross = sys.argv[8] == "si"
-#     two_point_best_first = sys.argv[9] == "si"
-#     interval_local_search = int(sys.argv[10])
-#     memetic_subset = float(sys.argv[11])
-# elif len(sys.argv) == 1:
-dataset_name = "ecoli"
-mode = "random"             # best, random, all
-restr_level = 10
-seed_asigned = 456
-lambda_var = 1
-n_population = 10
-interval_local_search = 10
-memetic_subset = 0.1
-mutation_prob = 0.001
-uni_cross = False
-two_point_best_first = True
-# else:
-#     print("Wrong number of arguments.")
-#     exit(1)
+if len(sys.argv) == 12:
+    mode = sys.argv[1]
+    dataset_name = sys.argv[2]
+    restr_level = int(sys.argv[3])
+    seed_asigned = int(sys.argv[4])
+    lambda_var = float(sys.argv[5])
+    n_population = int(sys.argv[6])
+    mutation_prob = float(sys.argv[7])
+    uni_cross = sys.argv[8] == "si"
+    two_point_best_first = sys.argv[9] == "si"
+    interval_local_search = int(sys.argv[10])
+    memetic_subset = float(sys.argv[11])
+elif len(sys.argv) == 1:
+    dataset_name = "ecoli"
+    mode = "random"             # best, random, all
+    restr_level = 10
+    seed_asigned = 456
+    lambda_var = 1
+    n_population = 10
+    interval_local_search = 10
+    memetic_subset = 0.1
+    mutation_prob = 0.001
+    uni_cross = False
+    two_point_best_first = True
+else:
+    print("Wrong number of arguments.")
+    exit(1)
 
 print("BBBB")
 #############################
@@ -359,7 +359,7 @@ for i in range(n_population):
     population_cluster[i] = np.random.randint(0, k, data.shape[0])
 
     # Exit if initial solution doesn't have at least a point in each cluster
-    if len(population_cluster_count[i]) != k:
+    if len(np.unique(population_cluster[i])) != k:
         exit(1)
 
 
@@ -489,13 +489,6 @@ while evaluations < 2000:
     #########################################################################
 
 
-
-
-
-
-    # if np.any(population_objetive_value == np.nan) or np.any(children == np.nan):
-    #     print("aaaaaaaaaaaaaaa")
-
     ######################## Mutation ######################################
     # Since is for the stationary approach we do the mutation at the level of the gen
 
@@ -505,6 +498,7 @@ while evaluations < 2000:
         ind_crom, ind_gen = divmod(mutation_index[i], n_instances)
         n_c = np.random.randint(0, k)
 
+        recalc = False
         if ind_crom >= n_new_children:
             full_c, count = np.unique(children[ind_crom], return_counts=True)
             for x in range(len(full_c)):
@@ -520,23 +514,23 @@ while evaluations < 2000:
 
         children[ind_crom][ind_gen] = n_c
 
+        if(recalc):
+            w = ind_crom
+            children_centroids[w], children_av_count[w] = update_centroids_numpy(data_arr, children[w])
+
+            data_arr, children_sum_dist[w], children[w], children_distance_cluster[w] \
+                = calculate_distance_cluster_numpy(data_arr, children_centroids[w], children[w],
+                                                   children_distance_cluster[w])
+
+            children_infeasibility[w] = infeasibility_numpy(children[w])
+            mean_deviation[w] = np.mean(children_sum_dist[w] / children_av_count[w])
+            children_objetive_value[w] = mean_deviation[w] + lambda_value * children_infeasibility[w]
+
+
 
     #########################################################################
 
-    # print(children[0])
-    # for i in range(n_instances):
-    #     children[0][i] = 0
-    # print(children[0])
 
-
-
-    # for i in range(n_selected):
-    #     if len(np.unique(children[i])) != k:
-    #         print("En iteracion ",i, "solo hay ", len(np.unique(children[i])) ," hijos: ", np.unique(children[i]))
-    # # print(np.unique(children))
-    # children_cluster = np.empty(n_selected, dtype=int)
-
-    # exit(0)
 
     ######################## Calculate Fitness  #############################
 
@@ -575,6 +569,12 @@ while evaluations < 2000:
         index_worse_child = np.argmax(children_objetive_value)
         children_cluster[index_worse_child] = np.copy(elite_cluster)
         children_objetive_value[index_worse_child] = np.copy(elite_obj)
+        children_distance_cluster[index_worse_child] = np.copy(population_distance_cluster[index_best_popu])
+        children_cluster_count[index_worse_child] = np.copy(population_cluster_count[index_best_popu])
+        children_centroids[index_worse_child] = np.copy(population_centroids[index_best_popu])
+        children_sum_dist[index_worse_child] = np.copy(population_sum_dist[index_best_popu])
+        children_av_count[index_worse_child] = np.copy(population_av_count[index_best_popu])
+        children_infeasibility[index_worse_child] = np.copy(population_infeasibility[index_best_popu])
 
     population_cluster = np.copy(children_cluster)
     population_objetive_value = np.copy(children_objetive_value)
@@ -587,6 +587,7 @@ while evaluations < 2000:
     population_infeasibility = np.copy(children_infeasibility)
 
     #########################################################################
+
     # print("GEn+1")
     # Problema av count
     generations += 1
@@ -606,24 +607,15 @@ while evaluations < 2000:
         if mode == "best":
             n = round(n_population * memetic_subset)
             population_selected = np.argpartition(children_objetive_value, n)[:n]
-            # print(children_objetive_value)
-            # print(population_selected)
         elif mode == "random":
             n = round(n_population * memetic_subset)
             population_selected = np.random.choice(range(n_population), n, replace=False)
         else:
             population_selected = range(n_population)
         for x in population_selected:
-            # print(x)
             gen_selected = np.random.choice(range(n_instances), n_instances, replace=False)
-            # print(gen_selected)
             w = 0
             n_errors = 0
-            # print("First: ", population_objetive_value[x])
-            # print(population_av_count)
-            # exit(1)
-            # print("Saved: ",population_av_count[x])
-            # print("Real: ",count_each_cluster(population_cluster[x]))
             while w < len(gen_selected) and n_errors < limit_errors:
                 changed = False
                 if population_av_count[x][population_cluster[x][w]] != 1:
@@ -643,20 +635,17 @@ while evaluations < 2000:
                 w += 1
                 if not changed:
                     n_errors += 1
-                # print(gen_selected[w], "  ", changed)
 
-            # print(population_objetive_value[x])
-            # print("Second: ", population_objetive_value[x])
-            # exit(1)
-
-        # print("BBBBBBB",evaluations)
         # exit()
 
 elapsed_time2 = time.perf_counter() - finish_ini
 f.write("Tiempo Consumido: "+ str(elapsed_time2))
 print("Initializing: ", elapsed_time)
+t = np.argmin(population_objetive_value)
+print(lambda_value)
+print(population_objetive_value)
+print("Mejor Obj:", population_objetive_value[t], "  Inf:",population_infeasibility[t], "  Dev:", np.mean(population_sum_dist[t]/population_av_count[t]))
 print("Calculating for 1000: ", elapsed_time2)
-
 
 
 
