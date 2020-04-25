@@ -23,7 +23,7 @@ elif len(sys.argv) == 1:
     dataset_name = "ecoli"
     mode = "random"             # best, random, all
     restr_level = 10
-    seed_asigned = 456
+    seed_asigned = 123
     lambda_var = 1
     n_population = 10
     interval_local_search = 10
@@ -410,7 +410,7 @@ f.write(str(evaluations) + "," + str(np.min(population_objetive_value)) + "," + 
     np.mean(population_objetive_value)))
 f.write('\n')
 
-while evaluations < 2000:
+while evaluations < 100000:
     best_selected = False
     ######################## Selection #######################################
     for i in range(n_selected):
@@ -500,6 +500,7 @@ while evaluations < 2000:
 
         recalc = False
         if ind_crom >= n_new_children:
+            recalc = True
             full_c, count = np.unique(children[ind_crom], return_counts=True)
             for x in range(len(full_c)):
                 count_new[ind_crom][full_c[x]] = count[x]
@@ -516,6 +517,8 @@ while evaluations < 2000:
 
         if(recalc):
             w = ind_crom
+            popu_index = selected[w]
+
             children_centroids[w], children_av_count[w] = update_centroids_numpy(data_arr, children[w])
 
             data_arr, children_sum_dist[w], children[w], children_distance_cluster[w] \
@@ -525,6 +528,15 @@ while evaluations < 2000:
             children_infeasibility[w] = infeasibility_numpy(children[w])
             mean_deviation[w] = np.mean(children_sum_dist[w] / children_av_count[w])
             children_objetive_value[w] = mean_deviation[w] + lambda_value * children_infeasibility[w]
+
+            population_cluster[popu_index] = np.copy(children[w])
+            population_objetive_value[popu_index] = np.copy(children_objetive_value[w])
+            population_distance_cluster[popu_index] = np.copy(children_distance_cluster[w])
+            population_cluster_count[popu_index] = np.copy(children_cluster_count[w])
+            population_centroids[popu_index] = np.copy(children_centroids[w])
+            population_sum_dist[popu_index] = np.copy(children_sum_dist[w])
+            population_av_count[popu_index] = np.copy(children_av_count[w])
+            population_infeasibility[popu_index] = np.copy(children_infeasibility[w])
 
 
 
@@ -646,6 +658,7 @@ print(lambda_value)
 print(population_objetive_value)
 print("Mejor Obj:", population_objetive_value[t], "  Inf:",population_infeasibility[t], "  Dev:", np.mean(population_sum_dist[t]/population_av_count[t]))
 print("Calculating for 1000: ", elapsed_time2)
+
 
 
 
