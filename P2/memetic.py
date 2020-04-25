@@ -20,8 +20,8 @@ if len(sys.argv) == 12:
     interval_local_search = int(sys.argv[10])
     memetic_subset = float(sys.argv[11])
 elif len(sys.argv) == 1:
-    dataset_name = "ecoli"
-    mode = "random"             # best, random, all
+    dataset_name = "rand"
+    mode = "all"             # best, random, all
     restr_level = 10
     seed_asigned = 123
     lambda_var = 1
@@ -654,11 +654,10 @@ elapsed_time2 = time.perf_counter() - finish_ini
 f.write("Tiempo Consumido: "+ str(elapsed_time2))
 print("Initializing: ", elapsed_time)
 t = np.argmin(population_objetive_value)
-print(lambda_value)
-print(population_objetive_value)
-print("Mejor Obj:", population_objetive_value[t], "  Inf:",population_infeasibility[t], "  Dev:", np.mean(population_sum_dist[t]/population_av_count[t]))
+f.write('\n')
+f.write("Mejor: obj"+ str(population_objetive_value[t])+ "  inf:"+str(population_infeasibility[t])+ "  dev:"+str(np.mean(population_sum_dist[t]/population_av_count[t])))
+print("Initializing: ", elapsed_time)
 print("Calculating for 1000: ", elapsed_time2)
-
 
 
 

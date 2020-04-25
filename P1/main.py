@@ -17,7 +17,7 @@ elif len(sys.argv) == 1:
     mode = "local"
     dataset_name = "ecoli"
     restr_level = 10
-    seed_asigned = 456
+    seed_asigned = 131415
     lambda_var = 1
 else:
     print("Wrong number of arguments.")
@@ -238,10 +238,18 @@ elif dataset_name == "ecoli":
     k = 8
     data_path = "./ecoli_set.dat"
     restrictions_path = "./ecoli_set_const_" + str(restr_level) + ".const"
-else:
+elif dataset_name == "rand":
     k = 3
     data_path = "./rand_set.dat"
     restrictions_path = "./rand_set_const_" + str(restr_level) + ".const"
+
+elif dataset_name == "newthyroid":
+    k = 3
+    data_path = "./newthyroid_set.dat"
+    restrictions_path = "./newthyroid_set_const_" + str(restr_level) + ".const"
+else:
+    print("Wrong dataset name")
+    exit(1)
 
 colmap = ['r', 'g', 'b']
 data = pd.read_csv(data_path, header=None)
@@ -283,7 +291,7 @@ if mode == "local":
     n_restrictions = (((len(restrictions.index) ** 2) - (restrictions.isin([0]).sum().sum())) / 2)-data.shape[0]
     # print(max_distance)
     lambda_value = (max_distance / n_restrictions) * lambda_var
-
+    print(lambda_value)
     # Generate neighbourhood
     possible_changes = []
     for i in range(len(data.index)):
