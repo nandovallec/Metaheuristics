@@ -38,11 +38,11 @@ else:
 print("BBBB")
 #############################
 if uni_cross:
-    name_file = ("memetic_"+mode+"_"+str(restr_level)+"_seed_"+str(seed_asigned)+"_uni")
+    name_file = ("memetic_"+dataset_name+"_"+str(restr_level)+"_seed_"+str(seed_asigned)+"_uni")
 elif two_point_best_first:
-    name_file = ("memetic_"+mode+"_"+str(restr_level)+"_seed_"+str(seed_asigned)+"_two_BestFirst")
+    name_file = ("memetic_"+dataset_name+"_"+str(restr_level)+"_seed_"+str(seed_asigned)+"_two_BestFirst")
 else:
-    name_file = ("memetic_"+mode+"_"+str(restr_level)+"_seed_"+str(seed_asigned)+"_two_BestLast")
+    name_file = ("memetic_"+dataset_name+"_"+str(restr_level)+"_seed_"+str(seed_asigned)+"_two_BestLast")
 
 f = open("./data_collected/" + name_file + ".csv", "w")
 
