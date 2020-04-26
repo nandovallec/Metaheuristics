@@ -23,7 +23,7 @@ two_point = ["no","si","no"]
 #                                                   n_population, mutation_prob, uniform[i], two_point[i]], stdout=PIPE,
 #                                                  stderr=PIPE, universal_newlines=True)
 
-modes = ["all"]
+modes = ["random", "best"]
 n_population = "10"
 interval = "10"
 subset = "0.1"
@@ -32,6 +32,7 @@ for mode in modes:
         for restr in restr_level:
             for seed in seeds:
                 for i in range(3):
-                    process = subprocess.run(["python3", "memetic.py", mode, name, restr, seed, lambda_mod,
+                    if (mode == 'random' and name == 'iris' and i == 2 and restr == '20')or (mode == 'best'):
+                        process = subprocess.run(["python3", "memetic.py", mode, name, restr, seed, lambda_mod,
                                               n_population, mutation_prob, uniform[i], two_point[i], interval, subset], stdout=PIPE,
                                              stderr=PIPE, universal_newlines=True)
