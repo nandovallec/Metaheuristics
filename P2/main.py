@@ -107,7 +107,6 @@ def row_infeasibility_partial(cluster, row_index):
     for c in pos_ones[row_index]:
         if not (cluster[c + row_index + 1] == own):
             infeasibility_points += 1
-
     # infeasibility_points += len([1 for i in np.where(r == -1)[0] if (cluster[i + row_index + 1] == own)])
     for c in pos_neg_ones[row_index]:
         if cluster[c + row_index + 1] == own:
@@ -254,7 +253,6 @@ distance_cluster_index = cluster_index + 1
 D = squareform(pdist(data))
 max_distance, [I_row, I_col] = np.nanmax(D), np.unravel_index(np.argmax(D), D.shape)
 n_restrictions = (((len(restrictions.index) ** 2) - (restrictions.isin([0]).sum().sum())) / 2) - data.shape[0]
-# print(max_distance)
 lambda_value = (max_distance / n_restrictions) * lambda_var
 
 print(lambda_value)
@@ -276,6 +274,7 @@ restrictions_numpy = np.asarray(restrictions)
 data_arr = np.asarray(data)
 mean_deviation = np.zeros(n_population)
 
+# Save index of restrictions for each row
 pos_ones = []
 pos_neg_ones = []
 
@@ -283,7 +282,6 @@ for i in range(n_instances):
     r = restrictions_numpy[i][i+1:]
     pos_ones.append(np.nonzero(r == 1)[0])
     pos_neg_ones.append(np.nonzero(r == -1)[0])
-    # print(pos_ones[0])
 
 pos_ones = np.asarray(pos_ones)
 pos_neg_ones = np.asarray(pos_neg_ones)
@@ -418,9 +416,9 @@ while evaluations < 100000:
 
 
     ######################## Mutation ######################################
-    # Since is for the stationary approach we do the mutation at the level of the gen
 
     if mode == "steady":
+        # Since is for the stationary approach we do the mutation at the level of the gen
         mutation_limit_steady = n_instances * mutation_prob
 
         if np.random.rand() < mutation_limit_steady:
@@ -460,9 +458,9 @@ while evaluations < 100000:
         for i in range(n_mutation):
             ind_crom, ind_gen = divmod(mutation_index[i], n_instances)
             n_c = np.random.randint(0, k)
-            # print("Muta: ", ind_crom, " gen ", n_c)
             recalc = False
             if ind_crom >= n_new_children:
+                # Recalculate values and update
                 recalc = True
                 full_c, count = np.unique(children[ind_crom], return_counts=True)
                 for x in range(len(full_c)):
@@ -504,22 +502,13 @@ while evaluations < 100000:
 
     #########################################################################
 
-    # if np.any(population_objetive_value == np.nan) or np.any(children == np.nan):
-    #     print("Error")
-    #     exit(1)
 
-
-    # for i in range(n_selected):
-    #     if len(np.unique(children[i])) != k:
-    #         print("En iteracion ",i, "solo hay ", len(np.unique(children[i])) ," hijos: ", np.unique(children[i]))
-    #         exit(1)
 
     ######################## Calculate Fitness  #############################
 
     children_cluster = children
     evaluations += n_new_children
     for i in range(n_new_children):
-        # print(children_cluster.shape)
         children_centroids[i], children_av_count[i] = update_centroids_numpy(data_arr, children_cluster[i])
         data_arr, children_sum_dist[i], children_cluster[i], children_distance_cluster[i] \
             = calculate_distance_cluster_numpy(data_arr, children_centroids[i], children_cluster[i], children_distance_cluster[i])
@@ -602,8 +591,6 @@ while evaluations < 100000:
     f.write(str(evaluations) + "," + str(np.min(population_objetive_value))+ ","+ str(np.mean(mean_deviation))+ ","+
             str(np.mean(children_infeasibility))+","+str(np.mean(children_objetive_value))+","+str(np.mean(population_objetive_value)))
     f.write('\n')
-    # print(str(evaluations) + "," + str(np.min(population_objetive_value))+ ","+ str(np.mean(mean_deviation))+ ","+
-    #         str(np.mean(children_infeasibility))+","+str(np.mean(children_objetive_value))+","+str(np.mean(population_objetive_value)))
 
     if evaluations>ev_l:
         ev_l += 100
