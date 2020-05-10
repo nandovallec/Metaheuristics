@@ -1,0 +1,8 @@
+Se ha considerado no crear carpeta BIN ya que los programas son ejecutables.
+
+main.py: Programa principal con algoritmos genéticos. Se puede ejecutar con o sin argumentos.
+
+memetic.py: Programa principal con algoritmos meméticos. Se puede ejecutar con o sin argumentos.
+
+comparison.py: Ejecuta ambos programas de manera iterativa para y crea las tablas de valores con los resultados. Sin argumentos.
+
