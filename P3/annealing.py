@@ -417,7 +417,7 @@ while temperature > final_temp and n_evaluations < 100000:
 #Finish timing
 elapsed_time = time.perf_counter() - start_time
 # print("Ev: ", n_evaluations)
-print("Iter:", n_evaluations)
+# print("Iter:", n_evaluations)
 
 # print("For lambda var:", lambda_var)
 print("Tasa C:", best_deviation)
