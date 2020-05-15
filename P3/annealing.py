@@ -19,7 +19,7 @@ elif len(sys.argv) == 1:
     restr_level = 10
     seed_asigned = 123
     lambda_var = 1
-    cauchy = False
+    cauchy = True
     alpha = 0.95
 else:
     print("Wrong number of arguments.")
@@ -316,6 +316,8 @@ best_inf = np.copy(total_infeasibility)
 kk = 0
 best_ss = np.zeros(n_instances)
 while temperature > final_temp and n_evaluations < 100000:
+    np.random.shuffle(possible_changes)
+
     possible_changes, neigh = get_neightbour(possible_changes)
 
     # Get first neighbour to be able to compare it later on
