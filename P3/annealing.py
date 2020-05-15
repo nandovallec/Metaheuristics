@@ -15,12 +15,12 @@ if len(sys.argv) == 7:
     cauchy = sys.argv[5] == "si"
     alpha = float(sys.argv[6])
 elif len(sys.argv) == 1:
-    dataset_name = "rand"
+    dataset_name = "ecoli"
     restr_level = 10
     seed_asigned = 123
     lambda_var = 1
-    cauchy = True
-    alpha = 0.98
+    cauchy = False
+    alpha = 0.95
 else:
     print("Wrong number of arguments.")
     exit(1)
@@ -258,13 +258,7 @@ np.random.shuffle(possible_changes)
 
 # Generate initial solution
 data['cluster'] = np.random.randint(0, k, data.shape[0])
-# data['cluster'] = pd.Series([0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
-# ,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
-# ,0,0,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2
-# ,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2
-# ,2,2,2,2,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1
-# ,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1
-# ,1,1,1,1,1,1])
+
 # Count how many points in each cluster
 cluster_count = np.array(data[['c0'] + ['cluster']].groupby('cluster').count())
 
@@ -322,6 +316,8 @@ best_inf = np.copy(total_infeasibility)
 kk = 0
 best_ss = np.zeros(n_instances)
 while temperature > final_temp and n_evaluations < 100000:
+    possible_changes, neigh = get_neightbour(possible_changes)
+
     # Get first neighbour to be able to compare it later on
     first_neigh = possible_changes[0]
 
@@ -419,10 +415,10 @@ while temperature > final_temp and n_evaluations < 100000:
 #Finish timing
 elapsed_time = time.perf_counter() - start_time
 # print("Ev: ", n_evaluations)
+print("Iter:", n_evaluations)
 
 # print("For lambda var:", lambda_var)
 print("Tasa C:", best_deviation)
-# print("Iter:", n_evaluations)
 print("Tasa Inf:", best_inf)
 print("Agr:", best_objective)
 print("Time:", elapsed_time)

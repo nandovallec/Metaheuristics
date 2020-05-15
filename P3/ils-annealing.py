@@ -336,6 +336,7 @@ for iterations in range(10):
     best_inf = np.copy(total_infeasibility)
 
     while temperature > final_temp and not repeated:
+        possible_changes, neigh = get_neightbour(possible_changes)
         # Get first neighbour to be able to compare it later on
         first_neigh = possible_changes[0]
 

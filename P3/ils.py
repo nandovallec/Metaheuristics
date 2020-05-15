@@ -317,6 +317,7 @@ for iterations in range(10):
     sum_values_clusters = sum_instances(data)
 
     while n_evaluations < 10000 and not repeated:
+        possible_changes, neigh = get_neightbour(possible_changes)
         # Get first neighbour to be able to compare it later on
         first_neigh = possible_changes[0]
 
