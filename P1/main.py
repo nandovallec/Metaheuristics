@@ -17,7 +17,7 @@ elif len(sys.argv) == 1:
     mode = "local"
     dataset_name = "ecoli"
     restr_level = 10
-    seed_asigned = 131415
+    seed_asigned = 123
     lambda_var = 1
 else:
     print("Wrong number of arguments.")
@@ -125,6 +125,23 @@ def calculate_distance_cluster_numpy(df, centr):
         # print("Iter: ",i,"        Sum: ", av[0])
 
     return df, av, av_count
+
+def calculate_distance_cluster_numpy2(df, centr, old, new):
+    old_d = 0
+    new_d = 0
+    for i in range(df.shape[0]):
+        cluster = int(df[i][cluster_index])
+        if cluster == old:
+            distance = np.float128(math.sqrt(sum([(a - b) ** 2 for a, b in zip(df[i][0:cluster_index], centr[cluster])])))
+            df[i][distance_cluster_index] = (distance)
+            old_d += (distance)
+        elif cluster == new:
+            distance = np.float128(math.sqrt(sum([(a - b) ** 2 for a, b in zip(df[i][0:cluster_index], centr[cluster])])))
+            df[i][distance_cluster_index] = (distance)
+            new_d += (distance)
+        # print("Iter: ",i,"        Sum: ", av[0])
+
+    return df, old_d, new_d
 
 
 def update_distance(df, centr, sum_dis, ind, old_clu, new_clu):
@@ -291,7 +308,7 @@ if mode == "local":
     n_restrictions = (((len(restrictions.index) ** 2) - (restrictions.isin([0]).sum().sum())) / 2)-data.shape[0]
     # print(max_distance)
     lambda_value = (max_distance / n_restrictions) * lambda_var
-    print(lambda_value)
+    # print(lambda_value)
     # Generate neighbourhood
     possible_changes = []
     for i in range(len(data.index)):
@@ -330,14 +347,19 @@ if mode == "local":
     sum_values_clusters = sum_instances(data)
 
     while n_iterations < 100000 and not repeated:
+        np.random.shuffle(possible_changes)
+
         # Get first neighbour to be able to compare it later on
         first_neigh = possible_changes[0]
 
         # Save old values
         old_objective_value = objective_value
         old_infeasibility = total_infeasibility
+        old_sum = np.copy(sum_dist)
         # number_cluster = count_each_cluster(data)
         first_iteration = True
+        # print("eee", n_iterations)
+
         while old_objective_value <= objective_value and n_iterations < 100000:
             n_iterations += 1
             possible_changes, neigh = get_neightbour(possible_changes)
@@ -369,11 +391,20 @@ if mode == "local":
             # Calculate new average
             # centroids = update_centroids_numpy(data)
 
-            data, sum_dist, old_distance = update_distance(data, centroids, sum_dist, p_index, old_cluster, new_cluster)
+            # data, sum_dist, old_distance = update_distance(data, centroids, sum_dist, p_index, old_cluster, new_cluster)
+
+            # data, sum_dist, av_count = calculate_distance_cluster_numpy(data, centroids)
+
+            data, old_d, new_d = calculate_distance_cluster_numpy2(data, centroids, old_cluster, new_cluster)
+            sum_dist[old_cluster] = old_d
+            sum_dist[new_cluster] = new_d
+
             # data, sum_dist, av_count = calculate_distance_cluster_numpy(data, centroids)
 
             # Calculate new objective value
             objective_value = np.mean(sum_dist/av_count) + lambda_value * total_infeasibility
+
+
 
             # Restore values
             if old_objective_value <= objective_value:
@@ -381,7 +412,9 @@ if mode == "local":
                 total_infeasibility = old_infeasibility
                 av_count[old_cluster] += 1
                 av_count[new_cluster] -= 1
-                data, sum_dist = undo_distance(data, sum_dist, p_index, old_cluster, new_cluster, old_distance)
+                # data, sum_dist = undo_distance(data, sum_dist, p_index, old_cluster, new_cluster, old_distance)
+                # data, sum_dist, av_count = calculate_distance_cluster_numpy(data, centroids)
+                sum_dist = np.copy(old_sum)
                 centroids, sum_values_clusters = update_centroids_optimized(data, centroids, sum_values_clusters,
                                                                             p_index, new_cluster, old_cluster, av_count)
 
@@ -402,6 +435,7 @@ if mode == "local":
     print("Time:", elapsed_time)
 
     # print(elapsed_time)
+    # print(data[:,cluster_index])
 
     # print(count_each_cluster(data))
 

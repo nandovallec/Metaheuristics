@@ -24,7 +24,7 @@ for name in data_set_names:
 
             aver_time = []
 
-            for i in range(10):
+            for i in range(1):
                 process = subprocess.run(["python3", "main.py", mode, name, restr, seed, lambda_mod], stdout=PIPE, stderr=PIPE, universal_newlines=True)
                 print("Mode:", mode, "   Dataset: ", name,"  with rest.level: ", restr, "  and seed: ", seed)
 

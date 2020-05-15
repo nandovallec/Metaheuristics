@@ -7,20 +7,20 @@ from scipy.spatial.distance import pdist, squareform, cdist
 import math
 import sys
 ##########################
-if len(sys.argv) == 5:
+if len(sys.argv) == 7:
     dataset_name = sys.argv[1]
     restr_level = int(sys.argv[2])
     seed_asigned = int(sys.argv[3])
     lambda_var = float(sys.argv[4])
-    chauchy = sys.argv[5] == "si"
+    cauchy = sys.argv[5] == "si"
     alpha = float(sys.argv[6])
 elif len(sys.argv) == 1:
     dataset_name = "rand"
-    restr_level = 20
+    restr_level = 10
     seed_asigned = 123
     lambda_var = 1
     cauchy = True
-    alpha = 0.96
+    alpha = 0.98
 else:
     print("Wrong number of arguments.")
     exit(1)
@@ -51,7 +51,7 @@ def get_neightbour(neightbour_list):
 
 
 def calculate_distance_cluster_numpy(df, centr):
-    av = (np.zeros(k))
+    av = (np.zeros(k, dtype=np.float128))
     av_count = (np.zeros(k))
     for i in range(df.shape[0]):
         cluster = int(df[i][cluster_index])
@@ -63,11 +63,27 @@ def calculate_distance_cluster_numpy(df, centr):
 
     return df, av, av_count
 
+def calculate_distance_cluster_numpy2(df, centr, old, new):
+    old_d = 0
+    new_d = 0
+    for i in range(df.shape[0]):
+        cluster = int(df[i][cluster_index])
+        if cluster == old:
+            distance = np.float128(math.sqrt(sum([(a - b) ** 2 for a, b in zip(df[i][0:cluster_index], centr[cluster])])))
+            df[i][distance_cluster_index] = (distance)
+            old_d += (distance)
+        elif cluster == new:
+            distance = np.float128(math.sqrt(sum([(a - b) ** 2 for a, b in zip(df[i][0:cluster_index], centr[cluster])])))
+            df[i][distance_cluster_index] = (distance)
+            new_d += (distance)
+        # print("Iter: ",i,"        Sum: ", av[0])
+
+    return df, old_d, new_d
 
 def update_distance(df, centr, sum_dis, ind, old_clu, new_clu):
 
     old_dist = df[ind][distance_cluster_index]
-    new_dist = math.sqrt(sum([(a - b) ** 2 for a, b in zip(df[ind][0:cluster_index], centr[new_clu])]))
+    new_dist = np.float128(math.sqrt(sum([(a - b) ** 2 for a, b in zip(df[ind][0:cluster_index], centr[new_clu])])))
     df[ind][distance_cluster_index] = new_dist
 
     sum_dis[old_clu] -= old_dist
@@ -242,7 +258,13 @@ np.random.shuffle(possible_changes)
 
 # Generate initial solution
 data['cluster'] = np.random.randint(0, k, data.shape[0])
-
+# data['cluster'] = pd.Series([0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+# ,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+# ,0,0,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2
+# ,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2
+# ,2,2,2,2,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1
+# ,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1
+# ,1,1,1,1,1,1])
 # Count how many points in each cluster
 cluster_count = np.array(data[['c0'] + ['cluster']].groupby('cluster').count())
 
@@ -293,12 +315,13 @@ n_iterations = 1
 best_objective = np.copy(objective_value)
 best_deviation = np.copy(np.mean(sum_dist/av_count))
 best_inf = np.copy(total_infeasibility)
-print(beta)
-print((100000.0/max_generated) * temperature * final_temp)
-print(temperature, "ss", beta)
+# print(beta)
+# print((100000.0/max_generated) * temperature * final_temp)
+# print(temperature, "ss", beta)
 # exit(1)
 kk = 0
-while temperature > final_temp and not repeated:
+best_ss = np.zeros(n_instances)
+while temperature > final_temp and n_evaluations < 100000:
     # Get first neighbour to be able to compare it later on
     first_neigh = possible_changes[0]
 
@@ -319,6 +342,7 @@ while temperature > final_temp and not repeated:
         # Save old values
         old_objective_value = objective_value
         old_infeasibility = total_infeasibility
+        old_sum = np.copy(sum_dist)
 
         # Skip if the cluster only have 1 element
         if av_count[old_cluster] == 1 or old_cluster == new_cluster:
@@ -339,21 +363,25 @@ while temperature > final_temp and not repeated:
         # Calculate new average
         # centroids = update_centroids_numpy(data)
 
-        data, sum_dist, old_distance = update_distance(data, centroids, sum_dist, p_index, old_cluster, new_cluster)
+        data, old_d, new_d = calculate_distance_cluster_numpy2(data, centroids, old_cluster, new_cluster)
+        sum_dist[old_cluster] = old_d
+        sum_dist[new_cluster] = new_d
         # data, sum_dist, av_count = calculate_distance_cluster_numpy(data, centroids)
 
         # Calculate new objective value
         objective_value = np.mean(sum_dist/av_count) + lambda_value * total_infeasibility
-
+        # print(generated, ":  ",objective_value, "   ", old_objective_value)
         delta = objective_value - old_objective_value
-        ra = np.random.rand() < np.exp((-delta)/temperature)
+        ll = np.random.rand()
+        ra = ll < np.exp((-delta)/temperature)
+
         # Restore values
         it.append(n_evaluations)
         ob.append(old_objective_value)
-        if delta < 0 or ra:
+        if delta <= 0 or ra:
             if delta > 0:
                 kk+=1
-            print(objective_value, "   ",delta<0,"  ",best_objective)
+            # print(objective_value, "   ",delta<0,"  ",best_objective,"     ", ll)
 
             accepted += 1
             # if total_infeasibility != infeasibility_numpy(data):
@@ -362,6 +390,7 @@ while temperature > final_temp and not repeated:
                 best_objective = np.copy(objective_value)
                 best_deviation = np.copy(np.mean(sum_dist / av_count))
                 best_inf = np.copy(total_infeasibility)
+                best_ss = np.copy(data[:, cluster_index])
 
         else:
             # if total_infeasibility != infeasibility_numpy(data):
@@ -371,33 +400,36 @@ while temperature > final_temp and not repeated:
             total_infeasibility = old_infeasibility
             av_count[old_cluster] += 1
             av_count[new_cluster] -= 1
-            data, sum_dist = undo_distance(data, sum_dist, p_index, old_cluster, new_cluster, old_distance)
+            sum_dist = np.copy(old_sum)
             centroids, sum_values_clusters = update_centroids_optimized(data, centroids, sum_values_clusters,
                                                                         p_index, new_cluster, old_cluster, av_count)
 
     if cauchy:
         temperature = temperature / (1.0 + (beta * temperature))
+        # print(temperature)
     else:
         temperature = temperature * alpha
     n_iterations += 1
     if accepted == 0:
-        print("NO ENCUNETRO NA")
+        # print("NO ENCUNETRO NA")
         break
-    print("CCC",temperature,"  ", final_temp,"   ", accepted, "  ac:", kk, "   ", best_objective)
+    # print("CCC",temperature,"  ", final_temp,"   ", generated, "  ac:", kk, "   ", best_objective)
 
 
 #Finish timing
 elapsed_time = time.perf_counter() - start_time
-print("Ev: ", n_evaluations)
+# print("Ev: ", n_evaluations)
+
 # print("For lambda var:", lambda_var)
 print("Tasa C:", best_deviation)
 # print("Iter:", n_evaluations)
 print("Tasa Inf:", best_inf)
 print("Agr:", best_objective)
 print("Time:", elapsed_time)
-print("KK",kk)
-plt.plot(it,ob)
-plt.show()
-print(elapsed_time)
+# print(best_ss)
+# print("KK",kk)
+# plt.plot(it,ob)
+# plt.show()
+# print(elapsed_time)
 
 # print(count_each_cluster(data))
