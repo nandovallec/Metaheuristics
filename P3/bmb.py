@@ -13,9 +13,9 @@ if len(sys.argv) == 5:
     seed_asigned = int(sys.argv[3])
     lambda_var = float(sys.argv[4])
 elif len(sys.argv) == 1:
-    dataset_name = "rand"
+    dataset_name = "ecoli"
     restr_level = 10
-    seed_asigned = 131415
+    seed_asigned = 123
     lambda_var = 1
 else:
     print("Wrong number of arguments.")
@@ -283,7 +283,7 @@ final_objective = np.zeros(10)
 data['distance_cluster'] = np.nan
 data = np.asarray(data)
 limit_ev = 10000
-for iterations in range(10):
+for iterations in range(2):
     it.append([])
     ob.append([])
     centroids = update_centroids_numpy(data)
@@ -300,6 +300,8 @@ for iterations in range(10):
     sum_values_clusters = sum_instances(data)
 
     while n_evaluations < limit_ev and not repeated:
+        np.random.shuffle(possible_changes)
+
         # Get first neighbour to be able to compare it later on
         first_neigh = possible_changes[0]
 
@@ -351,6 +353,8 @@ for iterations in range(10):
             objective_value = np.mean(sum_dist/av_count) + lambda_value * total_infeasibility
             it[iterations].append(n_evaluations)
             ob[iterations].append(old_objective_value)
+            print(n_evaluations,"    ", old_objective_value)
+
             # Restore values
             if old_objective_value <= objective_value:
                 data[p_index][cluster_index] = old_cluster
@@ -358,13 +362,10 @@ for iterations in range(10):
                 av_count[old_cluster] += 1
                 av_count[new_cluster] -= 1
                 sum_dist = np.copy(old_sum)
-                # data, sum_dist = undo_distance(data, sum_dist, p_index, old_cluster, new_cluster, old_distance)
-                data, sum_dist, av_count = calculate_distance_cluster_numpy(data, centroids)
-
                 centroids, sum_values_clusters = update_centroids_optimized(data, centroids, sum_values_clusters,
                                                                             p_index, new_cluster, old_cluster, av_count)
 
-    # limit_ev = limit_ev*10
+    limit_ev = limit_ev*10
 
     centroids = update_centroids_numpy(data)
     data, sum_dist, av_count = calculate_distance_cluster_numpy(data, centroids)
@@ -394,7 +395,7 @@ print("Tasa Inf:", final_infeasibility[best_index])
 print("Agr:", final_objective[best_index])
 print("Time:", elapsed_time)
 
-# for i in range(2):
-#     plt.plot(it[i],ob[i])
-# plt.show()
+for i in range(2):
+    plt.plot(it[i],ob[i])
+plt.show()
 

@@ -17,7 +17,7 @@ elif len(sys.argv) == 1:
     mode = "local"
     dataset_name = "ecoli"
     restr_level = 10
-    seed_asigned = 123
+    seed_asigned = 456
     lambda_var = 1
 else:
     print("Wrong number of arguments.")
@@ -361,7 +361,6 @@ if mode == "local":
         # print("eee", n_iterations)
 
         while old_objective_value <= objective_value and n_iterations < 100000:
-            n_iterations += 1
             possible_changes, neigh = get_neightbour(possible_changes)
             if neigh == first_neigh and not first_iteration:
                 repeated = True
@@ -378,6 +377,7 @@ if mode == "local":
             # Skip if the cluster only have 1 element
             if av_count[old_cluster] == 1 or old_cluster == new_cluster:
                 continue
+            n_iterations += 1
 
             total_infeasibility = total_infeasibility - row_infeasibility_numpy(data, p_index)
             av_count[old_cluster] -= 1
@@ -404,7 +404,7 @@ if mode == "local":
             # Calculate new objective value
             objective_value = np.mean(sum_dist/av_count) + lambda_value * total_infeasibility
 
-
+            print(n_iterations,"    ", old_objective_value)
 
             # Restore values
             if old_objective_value <= objective_value:
@@ -412,8 +412,6 @@ if mode == "local":
                 total_infeasibility = old_infeasibility
                 av_count[old_cluster] += 1
                 av_count[new_cluster] -= 1
-                # data, sum_dist = undo_distance(data, sum_dist, p_index, old_cluster, new_cluster, old_distance)
-                # data, sum_dist, av_count = calculate_distance_cluster_numpy(data, centroids)
                 sum_dist = np.copy(old_sum)
                 centroids, sum_values_clusters = update_centroids_optimized(data, centroids, sum_values_clusters,
                                                                             p_index, new_cluster, old_cluster, av_count)
@@ -429,7 +427,7 @@ if mode == "local":
 
     # print("For lambda var:", lambda_var)
     print("Tasa C:", np.mean(sum_dist/av_count))
-    # print("Iter:", n_iterations)
+    print("Iter:", n_iterations)
     print("Tasa Inf:", total_infeasibility)
     print("Agr:", objective_value)
     print("Time:", elapsed_time)
