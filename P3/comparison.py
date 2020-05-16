@@ -34,10 +34,13 @@ for name_file in programs:
 
                 for i in range(1):
                     process = subprocess.run(["python3", program_name, name, restr, seed, lambda_mod], stdout=PIPE, stderr=PIPE, universal_newlines=True)
-                    print(" Dataset: ", name,"  with rest.level: ", restr, "  and seed: ", seed)
+                    print("Program: ",name_file,  " Dataset: ", name,"  with rest.level: ", restr, "  and seed: ", seed)
 
                     ex = process.stdout.replace('Tasa C: ', '').replace('Tasa Inf: ', '').replace('Agr: ', '').replace('Time: ', '').split('\n')
+                    print(ex)
+
                     ex.pop()
+
                     aver_time.append(ex[3])
 
                 f.write(', '.join(map(str, ex)))
@@ -72,7 +75,7 @@ for name_file in programs:
                 for i in range(1):
                     process = subprocess.run(["python3", program_name, name, restr, seed, lambda_mod, "si", "0.95"],
                                              stdout=PIPE, stderr=PIPE, universal_newlines=True)
-                    print("Dataset: ", name, "  with rest.level: ", restr, "  and seed: ", seed)
+                    print("Program: ",name_file,  " Dataset: ", name,"  with rest.level: ", restr, "  and seed: ", seed)
 
                     ex = process.stdout.replace('Tasa C: ', '').replace('Tasa Inf: ', '').replace('Agr: ', '').replace(
                         'Time: ', '').split('\n')
