@@ -30,10 +30,11 @@ for name in data_set_names:
 
                 ex = process.stdout.replace('Tasa C: ', '').replace('Tasa Inf: ', '').replace('Agr: ', '').replace('Time: ', '').split('\n')
                 ex.pop()
-                aver_time.append(ex[3])
+                # aver_time.append(ex[3])
 
-            ex[3] = np.mean(np.array(aver_time).astype(np.float))
+            # ex[3] = np.mean(np.array(aver_time).astype(np.float))
             ex = [seed]+ex
+            print(ex)
             # print(ex)
 
             f.write(', '.join(map(str, ex)))

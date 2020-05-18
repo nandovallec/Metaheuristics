@@ -404,7 +404,7 @@ if mode == "local":
             # Calculate new objective value
             objective_value = np.mean(sum_dist/av_count) + lambda_value * total_infeasibility
 
-            print(n_iterations,"    ", old_objective_value)
+            # print(n_iterations,"    ", old_objective_value)
 
             # Restore values
             if old_objective_value <= objective_value:
@@ -427,7 +427,7 @@ if mode == "local":
 
     # print("For lambda var:", lambda_var)
     print("Tasa C:", np.mean(sum_dist/av_count))
-    print("Iter:", n_iterations)
+    # print("Iter:", n_iterations)
     print("Tasa Inf:", total_infeasibility)
     print("Agr:", objective_value)
     print("Time:", elapsed_time)

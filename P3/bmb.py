@@ -13,7 +13,7 @@ if len(sys.argv) == 5:
     seed_asigned = int(sys.argv[3])
     lambda_var = float(sys.argv[4])
 elif len(sys.argv) == 1:
-    dataset_name = "rand"
+    dataset_name = "ecoli"
     restr_level = 10
     seed_asigned = 123
     lambda_var = 1
@@ -395,7 +395,7 @@ print("Tasa Inf:", final_infeasibility[best_index])
 print("Agr:", final_objective[best_index])
 print("Time:", elapsed_time)
 
-# for i in range(2):
-#     plt.plot(it[i],ob[i])
-# plt.show()
+for i in range(10):
+    plt.plot(it[i],ob[i])
+plt.show()
 

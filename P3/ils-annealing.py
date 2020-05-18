@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 import time
-# import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt
 import random
 from scipy.spatial.distance import pdist, squareform, cdist
 import math
@@ -15,12 +15,12 @@ if len(sys.argv) == 7:
     cauchy = sys.argv[5] == "si"
     alpha = float(sys.argv[6])
 elif len(sys.argv) == 1:
-    dataset_name = "rand"
+    dataset_name = "iris"
     restr_level = 10
-    seed_asigned = 123
+    seed_asigned = 456
     lambda_var = 1
-    cauchy = True
-    alpha = 0.96
+    cauchy = False
+    alpha = 0.80
 else:
     print("Wrong number of arguments.")
     exit(1)
@@ -264,7 +264,7 @@ lambda_value = (max_distance / n_restrictions) * lambda_var
 mu_phi = 0.3
 final_temp = 0.01
 max_generated = 10*n_instances
-max_accepted = 0.1*max_generated
+max_accepted = 0.05*max_generated
 # Generate neighbourhood
 possible_changes = []
 for i in range(len(data.index)):
@@ -311,6 +311,8 @@ data = np.asarray(data)
 
 t_ev = 0
 for iterations in range(10):
+    it.append([])
+    ob.append([])
     centroids = update_centroids_numpy(data)
     data, sum_dist, av_count = calculate_distance_cluster_numpy(data, centroids)
 
@@ -335,7 +337,7 @@ for iterations in range(10):
     best_deviation = np.copy(np.mean(sum_dist / av_count))
     best_inf = np.copy(total_infeasibility)
 
-    while temperature > final_temp and not repeated:
+    while temperature > final_temp and not repeated and n_evaluations < 10000:
         np.random.shuffle(possible_changes)
 
         possible_changes, neigh = get_neightbour(possible_changes)
@@ -392,8 +394,8 @@ for iterations in range(10):
             ll = np.random.rand()
             ra = ll < np.exp((-delta) / temperature)
             # Restore values
-            it.append(n_evaluations)
-            ob.append(old_objective_value)
+            it[iterations].append(n_evaluations)
+            ob[iterations].append(old_objective_value)
             if delta < 0 or ra:
                 if delta > 0:
                     kk += 1
@@ -447,15 +449,11 @@ for iterations in range(10):
     best_index = np.argmin(final_objective[:iterations+1])
 
     # print("Uso ", best_index)
-
+    print("Ev: ",n_evaluations, "  ", objective_value)
     data[:, cluster_index] = final_clusters[best_index]
     data[:, cluster_index] = strong_mutation(data[:, cluster_index])
-    # print(final_objective[:iterations+1])
-    # exit(1)
-    # data[:,cluster_index] = np.random.randint(0, k, data.shape[0])
-    # while(len(np.unique(data[:, cluster_index])) != k):
-    #     print("MMMM")
-    #     data[:,cluster_index] = np.random.randint(0, k, data.shape[0])
+    while(len(np.unique(data[:, cluster_index])) != k):
+        data[:,cluster_index] = np.random.randint(0, k, data.shape[0])
     t_ev += n_evaluations
 
 #Finish timing
@@ -473,6 +471,14 @@ print("Tasa C:", final_deviation[best_index])
 print("Tasa Inf:", final_infeasibility[best_index])
 print("Agr:", final_objective[best_index])
 print("Time:", elapsed_time)
+
+for i in range(10):
+    plt.plot(it[i],ob[i], label=str("It"+str(i)))
+plt.legend(loc='best')
+plt.xlabel("Evaluations")
+plt.ylabel("Objective Function")
+
+plt.show()
 
 
 
