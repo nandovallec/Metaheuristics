@@ -27,6 +27,7 @@ for name in data_set_names:
                         # ex = process.stdout
                         ex.pop()
                         # aver_time.append(ex[3])
+
                         # ex[3] = np.mean(np.array(aver_time).astype(np.float))
                         # ex = [seed]+ex
                         print(say)

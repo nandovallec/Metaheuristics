@@ -14,10 +14,10 @@ if len(sys.argv) == 6:
     seed_asigned = int(sys.argv[4])
     lambda_var = float(sys.argv[5])
 elif len(sys.argv) == 1:
-    mode = "local"
-    dataset_name = "ecoli"
+    mode = "greedy"
+    dataset_name = "rand"
     restr_level = 10
-    seed_asigned = 456
+    seed_asigned = 123
     lambda_var = 1
 else:
     print("Wrong number of arguments.")

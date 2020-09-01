@@ -21,7 +21,7 @@ if len(sys.argv) == 12:
     memetic_subset = float(sys.argv[11])
 elif len(sys.argv) == 1:
     dataset_name = "rand"
-    mode = "all"             # best, random, all
+    mode = "random"             # best, random, all
     restr_level = 10
     seed_asigned = 123
     lambda_var = 1

@@ -15,11 +15,11 @@ if len(sys.argv) == 7:
     cauchy = sys.argv[5] == "si"
     alpha = float(sys.argv[6])
 elif len(sys.argv) == 1:
-    dataset_name = "rand"
+    dataset_name = "ecoli"
     restr_level = 10
     seed_asigned = 123
     lambda_var = 1
-    cauchy = True
+    cauchy = False
     alpha = 0.85
 else:
     print("Wrong number of arguments.")

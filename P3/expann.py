@@ -303,25 +303,25 @@ limit_ev = 100000.0
 
 for tt in range(3):
     if tt == 0:
-        # cauchy = True
+        cauchy = True
         # cauchy = False
         # alpha = 0.9
         # max_accepted = n_instances
-        max_generated = n_instances * 10
-        max_accepted = 0.1*max_generated
+        # max_generated = n_instances * 10
+        # max_accepted = 0.1*max_generated
     elif tt == 1:
-        # cauchy = False
-        # alpha = 0.8
+        cauchy = False
+        alpha = 0.95
         # max_accepted = n_instances*2
-        max_generated = n_instances * 5
-        max_accepted = 0.1*max_generated
+        # max_generated = n_instances * 5
+        # max_accepted = 0.1*max_generated
 
     elif tt == 2:
-        # cauchy = False
-        # alpha = 0.85
+        cauchy = False
+        alpha = 0.98
         # max_accepted = n_instances/2
-        max_generated = n_instances
-        max_accepted = 0.1*max_generated
+        # max_generated = n_instances
+        # max_accepted = 0.1*max_generated
 
     it.append([])
     ob.append([])
@@ -420,7 +420,10 @@ for tt in range(3):
                 ra = ll < np.exp((-delta) / temperature)
                 # Restore values
                 it[tt][iterations].append(n_evaluations)
-                ob[tt][iterations].append(old_objective_value)
+                # ob[tt][iterations].append(old_objective_value)
+                ob[tt][iterations].append(temperature)
+                print(n_evaluations," : ", temperature)
+
                 if delta < 0 or ra:
                     if delta > 0:
                         kk += 1
@@ -511,26 +514,27 @@ for tt in range(3):
 # print(count_each_cluster(data))
 
 fig1, ax1 = plt.subplots()
-for i in range(1):
-    ax1.plot(it[0][i],ob[0][i], label=str("It"+str(i)))
+for w in range(3):
+    for i in range(1):
+        ax1.plot(it[w][i],ob[w][i], label=str("It"+str(w)))
 ax1.legend(loc='best')
 plt.xlabel("Evaluations")
 plt.ylabel("Objective Function")
-plt.title("MG = n*10, MA = 0.1*MG")
-fig2, ax2 = plt.subplots()
-for i in range(1):
-    ax2.plot(it[1][i],ob[1][i], label=str("It"+str(i)))
-ax2.legend(loc='best')
-plt.xlabel("Evaluations")
-plt.ylabel("Objective Function")
-plt.title("MG = n*5, MA = 0.1*MG")
-fig3, ax3 = plt.subplots()
-for i in range(1):
-    ax3.plot(it[2][i],ob[2][i], label=str("It"+str(i)))
-ax3.legend(loc='best')
-plt.xlabel("Evaluations")
-plt.ylabel("Objective Function")
-plt.title("MG = n, MA = 0.1*MG")
+# plt.title("MG = n*10, MA = 0.1*MG")
+# fig2, ax2 = plt.subplots()
+# for i in range(1):
+#     ax1.plot(it[1][i],ob[1][i], label=str("It"+str(i)))
+# ax2.legend(loc='best')
+# plt.xlabel("Evaluations")
+# plt.ylabel("Objective Function")
+# plt.title("MG = n*5, MA = 0.1*MG")
+# fig3, ax3 = plt.subplots()
+# for i in range(1):
+#     ax1.plot(it[2][i],ob[2][i], label=str("It"+str(i)))
+# ax3.legend(loc='best')
+# plt.xlabel("Evaluations")
+# plt.ylabel("Objective Function")
+# plt.title("MG = n, MA = 0.1*MG")
 
 
 

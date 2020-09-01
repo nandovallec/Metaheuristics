@@ -13,7 +13,7 @@ if len(sys.argv) == 5:
     seed_asigned = int(sys.argv[3])
     lambda_var = float(sys.argv[4])
 elif len(sys.argv) == 1:
-    dataset_name = "ecoli"
+    dataset_name = "rand"
     restr_level = 10
     seed_asigned = 123
     lambda_var = 1
@@ -380,7 +380,6 @@ for iterations in range(10):
 
     data[:,cluster_index] = np.random.randint(0, k, data.shape[0])
     while(len(np.unique(data[:, cluster_index])) != k):
-        # print("MMMM")
         data[:,cluster_index] = np.random.randint(0, k, data.shape[0])
 
 #Finish timing

@@ -1,32 +1,30 @@
 import pandas as pd
 import numpy as np
 import time
-import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
 import random
 from scipy.spatial.distance import pdist, squareform, cdist
 import math
 import sys
 ##########################
-if len(sys.argv) == 7:
+if len(sys.argv) == 5:
     dataset_name = sys.argv[1]
     restr_level = int(sys.argv[2])
     seed_asigned = int(sys.argv[3])
     lambda_var = float(sys.argv[4])
-    cauchy = sys.argv[5] == "si"
-    alpha = float(sys.argv[6])
 elif len(sys.argv) == 1:
     dataset_name = "rand"
     restr_level = 10
     seed_asigned = 123
     lambda_var = 1
-    cauchy = True
-    alpha = 0.85
 else:
     print("Wrong number of arguments.")
     exit(1)
 #############################
-it = []
-ob = []
+inf_gr = []
+inf_lo = []
+it_gr = []
+it_lo = []
 
 def printIndexCluster(df):
     d = [[] for i in range(k)]
@@ -261,10 +259,6 @@ max_distance, [I_row, I_col] = np.nanmax(D), np.unravel_index(np.argmax(D), D.sh
 n_restrictions = (((len(restrictions.index) ** 2) - (restrictions.isin([0]).sum().sum())) / 2)-data.shape[0]
 # print(max_distance)
 lambda_value = (max_distance / n_restrictions) * lambda_var
-mu_phi = 0.3
-final_temp = 0.01
-max_generated = 5*n_instances
-max_accepted = 0.05*max_generated
 # Generate neighbourhood
 possible_changes = []
 for i in range(len(data.index)):
@@ -308,11 +302,7 @@ final_clusters = np.zeros((10, n_instances))
 data['distance_cluster'] = np.nan
 data = np.asarray(data)
 
-
-t_ev = 0
 for iterations in range(10):
-    it.append([])
-    ob.append([])
     centroids = update_centroids_numpy(data)
     data, sum_dist, av_count = calculate_distance_cluster_numpy(data, centroids)
 
@@ -326,49 +316,39 @@ for iterations in range(10):
     repeated = False
     sum_values_clusters = sum_instances(data)
 
-    temperature = (mu_phi * objective_value) / (-np.log(mu_phi))
-    while temperature < final_temp:
-        final_temp = final_temp / 10.0
-
-    beta = (temperature - final_temp) / ((10000.0 / max_generated) * temperature * final_temp)
-    n_iterations = 1
-
-    best_objective = np.copy(objective_value)
-    best_deviation = np.copy(np.mean(sum_dist / av_count))
-    best_inf = np.copy(total_infeasibility)
-
-    while temperature > final_temp and not repeated and n_evaluations < 10000:
+    while n_evaluations < 10000 and not repeated:
         np.random.shuffle(possible_changes)
 
         possible_changes, neigh = get_neightbour(possible_changes)
         # Get first neighbour to be able to compare it later on
         first_neigh = possible_changes[0]
 
-        # number_cluster = count_each_cluster(data)
-        accepted = 0
-        generated = 0
-        # print("BBB",temperature,"  ", final_temp, "  ", total_infeasibility)
-        kk = 0
-        # np.random.shuffle(possible_changes)
+        # Save old values
+        old_objective_value = objective_value
+        old_infeasibility = total_infeasibility
+        old_sum = np.copy(sum_dist)
 
-        while accepted < max_accepted and generated < max_generated:
+        # number_cluster = count_each_cluster(data)
+        first_iteration = True
+        while old_objective_value <= objective_value and n_evaluations < 10000:
             possible_changes, neigh = get_neightbour(possible_changes)
+            if neigh == first_neigh and not first_iteration:
+                repeated = True
+                # Break if we already got every possible neighbour
+                break
+
+            first_iteration = False
+
             # Save the original cluster from the point we are going to change
             old_cluster = int(data[neigh[0]][cluster_index])
             p_index = neigh[0]
             new_cluster = neigh[1]
-            old_sum = np.copy(sum_dist)
-
-            # Save old values
-            old_objective_value = objective_value
-            old_infeasibility = total_infeasibility
 
             # Skip if the cluster only have 1 element
             if av_count[old_cluster] == 1 or old_cluster == new_cluster:
-                # print(av_count, "   ", p_index, "  ", old_cluster, "  ", new_cluster, "   ", len(possible_changes))
                 continue
+
             n_evaluations += 1
-            generated += 1
 
             total_infeasibility = total_infeasibility - row_infeasibility_numpy(data, p_index)
             av_count[old_cluster] -= 1
@@ -378,8 +358,7 @@ for iterations in range(10):
             total_infeasibility = total_infeasibility + row_infeasibility_numpy(data, p_index)
             av_count[new_cluster] += 1
 
-            centroids, sum_values_clusters = update_centroids_optimized(data, centroids, sum_values_clusters, p_index,
-                                                                        old_cluster, new_cluster, av_count)
+            centroids, sum_values_clusters = update_centroids_optimized(data, centroids, sum_values_clusters, p_index, old_cluster, new_cluster, av_count)
             # Calculate new average
             # centroids = update_centroids_numpy(data)
 
@@ -388,31 +367,10 @@ for iterations in range(10):
             sum_dist[old_cluster] = old_d
             sum_dist[new_cluster] = new_d
             # Calculate new objective value
-            objective_value = np.mean(sum_dist / av_count) + lambda_value * total_infeasibility
+            objective_value = np.mean(sum_dist/av_count) + lambda_value * total_infeasibility
 
-            delta = objective_value - old_objective_value
-            ll = np.random.rand()
-            ra = ll < np.exp((-delta) / temperature)
             # Restore values
-            it[iterations].append(n_evaluations)
-            ob[iterations].append(old_objective_value)
-            if delta < 0 or ra:
-                if delta > 0:
-                    kk += 1
-                # print(objective_value, "   ", delta < 0, "  ", best_objective, "     ", ll)
-
-                accepted += 1
-                # if total_infeasibility != infeasibility_numpy(data):
-                #     print(total_infeasibility, " +++ ", infeasibility_numpy(data))
-                if objective_value < best_objective:
-                    best_objective = np.copy(objective_value)
-                    best_deviation = np.copy(np.mean(sum_dist / av_count))
-                    best_inf = np.copy(total_infeasibility)
-
-            else:
-                # if total_infeasibility != infeasibility_numpy(data):
-                #     print(total_infeasibility, " --- ", infeasibility_numpy(data))
-                objective_value = old_objective_value
+            if old_objective_value <= objective_value:
                 data[p_index][cluster_index] = old_cluster
                 total_infeasibility = old_infeasibility
                 av_count[old_cluster] += 1
@@ -423,17 +381,8 @@ for iterations in range(10):
                 centroids, sum_values_clusters = update_centroids_optimized(data, centroids, sum_values_clusters,
                                                                             p_index, new_cluster, old_cluster, av_count)
 
-        if cauchy:
-            temperature = temperature / (1.0 + (beta * temperature))
-        else:
-            temperature = temperature * alpha
-        n_iterations += 1
-        if accepted == 0:
-            # print("NO ENCUNETRO NA")
-            break
-        # print("CCC", temperature, "  ", final_temp, "   ", accepted, "  ac:", kk, "   ", best_objective)
 
-    # print("EV: ", n_evaluations)
+
     centroids = update_centroids_numpy(data)
     data, sum_dist, av_count = calculate_distance_cluster_numpy(data, centroids)
     total_infeasibility = infeasibility_numpy(data)
@@ -449,19 +398,22 @@ for iterations in range(10):
     best_index = np.argmin(final_objective[:iterations+1])
 
     # print("Uso ", best_index)
-    print("Ev: ",n_evaluations, "  ", objective_value)
+
     data[:, cluster_index] = final_clusters[best_index]
     data[:, cluster_index] = strong_mutation(data[:, cluster_index])
-    while(len(np.unique(data[:, cluster_index])) != k):
-        data[:,cluster_index] = np.random.randint(0, k, data.shape[0])
-    t_ev += n_evaluations
+    # print(final_objective[:iterations+1])
+    # exit(1)
+    # data[:,cluster_index] = np.random.randint(0, k, data.shape[0])
+    # while(len(np.unique(data[:, cluster_index])) != k):
+    #     print("MMMM")
+    #     data[:,cluster_index] = np.random.randint(0, k, data.shape[0])
 
 #Finish timing
 elapsed_time = time.perf_counter() - start_time
 
 best_index = np.argmin(final_objective)
 # print("Usso ", best_index)
-# print("Total: ", t_ev)
+
 # print(final_objective)
 # print(final_evaluations)
 # print("Evaluaciones:", final_evaluations[best_index])
@@ -471,14 +423,6 @@ print("Tasa C:", final_deviation[best_index])
 print("Tasa Inf:", final_infeasibility[best_index])
 print("Agr:", final_objective[best_index])
 print("Time:", elapsed_time)
-
-for i in range(10):
-    plt.plot(it[i],ob[i], label=str("It"+str(i)))
-plt.legend(loc='best')
-plt.xlabel("Evaluations")
-plt.ylabel("Objective Function")
-
-plt.show()
 
 
 

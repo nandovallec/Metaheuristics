@@ -18,8 +18,8 @@ if len(sys.argv) == 10:
     uni_cross = sys.argv[8] == "si"
     two_point_best_first = sys.argv[9] == "si"
 elif len(sys.argv) == 1:
-    mode = "generational"          # generational or steady (state)
-    dataset_name = "ecoli"
+    mode = "steady"          # generational or steady (state)
+    dataset_name = "rand"
     restr_level = 10
     seed_asigned = 123
     lambda_var = 1
